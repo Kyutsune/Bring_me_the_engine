@@ -7,7 +7,7 @@
 #include <iostream>
 
 void reactKeyboardPressed(GLFWwindow * window, const char * nameKeyPressed, int keyPressed) {
-    std::cout<<nameKeyPressed << " pressed" << std::endl;
+    // std::cout<<nameKeyPressed << " pressed" << std::endl;
     // Gestion pour fermer la fenêtre si la touche Échap est pressée
     if (keyPressed == GLFW_KEY_ESCAPE) {
         glfwSetWindowShouldClose(window, GLFW_TRUE);

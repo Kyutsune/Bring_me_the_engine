@@ -11,67 +11,125 @@
 
 // TODO: foutre de l'ordre dans ce joyeux bordel
 
+/**
+ * @brief Met à jour les uniforms de caméra pour un shader donné.
+ *
+ * Cette fonction envoie les matrices model, view et projection au shader.
+ *
+ * @param shader Shader à mettre à jour
+ * @param model Matrice de transformation de l'entité
+ * @param view Matrice de vue de la caméra
+ * @param projection Matrice de projection
+ */
 inline void updateCameraUniforms(Shader & shader, const Mat4 & model, const Mat4 & view, const Mat4 & projection) {
     shader.setMat4("model", model);
     shader.setMat4("view", view);
     shader.setMat4("projection", projection);
 }
 
+/**
+ * @class Entity
+ * @brief Représente un objet 3D dans la scène.
+ *
+ * Une entité possède un mesh, un matériau, une transformation (position, rotation, scale),
+ * et peut être rendue à l'écran via un shader. Elle gère également sa bounding box pour
+ * le culling et les collisions.
+ */
 class Entity : public std::enable_shared_from_this<Entity> {
 public:
+    /// Constructeur par défaut (transform identitaire, mesh nul)
     Entity() : m_transform(Mat4::identity()), m_mesh(nullptr) {}
 
+    /**
+     * @brief Constructeur avec mesh et textures
+     *
+     * @param transform Matrice initiale de transformation
+     * @param mesh Mesh associé à l'entité
+     * @param filenameTextDiffuse Chemin vers la texture diffuse
+     * @param filenameNormalMap Chemin vers la normal map
+     * @param filenameSpecularMap Chemin vers la specular map
+     * @param name Nom de l'entité
+     */
     Entity(const Mat4 & transform, std::shared_ptr<Mesh> mesh,
            const std::string & filenameTextDiffuse = "",
            const std::string & filenameNormalMap = "",
            const std::string & filenameSpecularMap = "",
            const std::string & name = "");
 
+    /**
+     * @brief Constructeur avec mesh et matériau
+     *
+     * @param transform Matrice initiale de transformation
+     * @param mesh Mesh associé
+     * @param material Matériau de l'entité
+     * @param name Nom de l'entité
+     */
     Entity(const Mat4 & transform, std::shared_ptr<Mesh> mesh,
            std::shared_ptr<Material> material,
            const std::string & name = "");
 
-    virtual ~Entity() = default;
+    ~Entity() = default;
 
+    // --- Accesseurs ---
     const std::string & getName() const { return m_entity_name; }
     const Mat4 & getTransform() const { return m_transform; }
     Mat4 & getTransform() { return m_transform; }
     void setTransform(const Mat4 & newTransform);
 
-    void draw_entity(Shader & shader, const Mat4 & view, const Mat4 & projection);
-
-    AABB getBoundingBox() { return m_boundingBox; }
-    AABB getTransformedBoundingBox() const;
-
     Material & getMaterial() { return m_material; }
     const Material & getMaterial() const { return m_material; }
 
-    inline const std::shared_ptr<Mesh> & getMesh() const { return m_mesh; }
+    const std::shared_ptr<Mesh> & getMesh() const { return m_mesh; }
 
-    inline bool isVisible() const { return visible; }
-    inline void setVisible(bool v) { visible = v; }
+    bool isVisible() const { return visible; }
+    void setVisible(bool v) { visible = v; }
 
+    Vec3 getPosition() const { return m_position; }
     inline void setPosition(const Vec3 & pos) {
         m_transform.setTranslation(pos);
         m_position = pos;
         updateTransform();
     }
 
-    inline void setScale(const Vec3 & scale) {
-        m_scale = scale;
-        updateTransform();
-    }
-
-    inline Vec3 getScale() const { return m_scale; }
-
-    inline void setRotation(const Quat & rot) {
+    Quat getRotation() const { return m_rotation; }
+    void setRotation(const Quat & rot) {
         m_rotation = rot.normalized();
         updateTransform();
     }
 
-    inline Vec3 getPosition() const { return m_position; }
-    inline Quat getRotation() const { return m_rotation; }
+    Vec3 getScale() const { return m_scale; }
+    void setScale(const Vec3 & scale) {
+        m_scale = scale;
+        updateTransform();
+    }
 
+    // --- Fonctionnalités ---
+    /**
+     * @brief Dessine l'entité avec un shader donné
+     *
+     * @param shader Shader utilisé pour le rendu
+     * @param view Matrice view de la caméra
+     * @param projection Matrice projection de la caméra
+     */
+    void draw_entity(Shader & shader, const Mat4 & view, const Mat4 & projection);
+
+    /**
+     * @brief Récupère la bounding box non transformée
+     *
+     * @return AABB
+     */
+    AABB getBoundingBox() { return m_boundingBox; }
+
+    /**
+     * @brief Récupère la bounding box transformée par la matrice de l'entité
+     *
+     * @return AABB
+     */
+    AABB getTransformedBoundingBox() const;
+
+    /**
+     * @brief Met à jour la matrice de transformation à partir de la position, rotation et scale
+     */
     void updateTransform();
 
 private:
