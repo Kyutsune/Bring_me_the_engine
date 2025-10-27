@@ -1,4 +1,5 @@
 #include "engine/Entity.h"
+#include "Globals.h"
 
 Entity::Entity(const Mat4 & transform, std::shared_ptr<Mesh> mesh,
                const std::string & filenameTextDiffuse,
@@ -32,6 +33,9 @@ Entity::Entity(const Mat4 & transform, std::shared_ptr<Mesh> mesh,
         m_boundingBox = this->m_mesh->getBoundingBox();
     }
     m_entity_name = name.empty() ? "Unnamed Entity" : name;
+
+
+    m_material.m_baseColor = g_selectedColor;
 
     setTransform(transform);
     updateTransform();
@@ -77,6 +81,26 @@ void Entity::draw_entity(Shader & shader, const Mat4 & view, const Mat4 & projec
     } else {
         shader.set("useSpecularMap", 0);
     }
+    shader.set("baseColor", m_material.m_baseColor);
+    shader.set("useVertexColor", m_material.m_useVertexColor);
+
+    // if (this->m_entity_name == "Cube_tout_bleu") {
+    //     // Mettre tous les vertices à la couleur de base
+    //     Vec3 baseColor(0.8f, 0.4f, 0.4f); // Rose/rouge
+    //     for (auto & v : m_mesh->getVerticesRef()) {
+    //         v.m_color = baseColor;
+    //     }
+
+    //     // Mettre UN coin en bleu
+    //     const Vec3 targetPos = m_mesh->getVertexRef(1).m_position;
+    //     for (auto & v : m_mesh->getVerticesRef()) {
+    //         if ((v.m_position - targetPos).length() < 0.0001f) {
+    //             v.m_color = Vec3(0, 0, 1);
+    //         }
+    //     }
+
+    //     m_mesh->upload();
+    // }
 
     m_mesh->draw();
 }

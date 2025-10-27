@@ -87,6 +87,8 @@ struct Vec3 {
     Vec3 operator*(const Vec3 & other) const;
     Vec3 operator/(float scalar) const;
 
+    bool operator==(const Vec3 & other) const;
+    bool operator!=(const Vec3 & other) const;
     Vec3 operator+=(const Vec3 & other);
     Vec3 operator-=(const Vec3 & other);
 

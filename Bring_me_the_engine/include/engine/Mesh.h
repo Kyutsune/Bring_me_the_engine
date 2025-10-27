@@ -12,7 +12,7 @@
 /**
  * @class Mesh
  * @brief Représente un objet 3D composé de sommets et d'indices.
- * 
+ *
  * La classe gère la création des buffers OpenGL (VAO, VBO, EBO) et fournit
  * les méthodes pour dessiner le mesh et obtenir son bounding box.
  */
@@ -23,7 +23,7 @@ public:
      * @param vertices Sommets du mesh
      * @param indices Indices pour dessiner les triangles
      */
-    Mesh(const std::vector<Vertex>& vertices, const std::vector<unsigned int>& indices);
+    Mesh(const std::vector<Vertex> & vertices, const std::vector<unsigned int> & indices);
 
     /// Destructeur qui libère les ressources OpenGL
     ~Mesh();
@@ -31,11 +31,20 @@ public:
     /// Dessine le mesh avec les buffers OpenGL configurés
     void draw() const;
 
+    /// Ré-envoie les données des sommets au GPU (utile après modification CPU)
+    void upload();
+
     /// Retourne l'AABB qui englobe le mesh
     AABB getBoundingBox() const;
 
     /// Retourne une copie des vertices
     inline std::vector<Vertex> getVertices() const { return m_vertices; }
+
+    /// Retourne une référence constante aux vertices
+    inline std::vector<Vertex> & getVerticesRef() { return m_vertices; }
+
+    /// Retourne une référence à un vertex
+    inline Vertex & getVertexRef(size_t index) { return m_vertices.at(index); }
 
     /// Retourne une référence aux indices
     inline const std::vector<unsigned int> & getIndices() const { return m_indices; }

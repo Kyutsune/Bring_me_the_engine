@@ -5,6 +5,7 @@
 #include "geometry/Sphere.h"
 #include "rendering/GestionTextures/TextureManager.h"
 #include "system/PathResolver.h"
+#include "Globals.h"
 #include <fstream>
 
 #include "../external/json/json.hpp"
@@ -299,6 +300,7 @@ namespace scenePreloaded {
                 // Matériaux
                 std::shared_ptr<Material> material = nullptr;
                 if (e.contains("material")) {
+                    /// TODO: Faire en sorte que mes fichiers puissent charger des couleurs de base aussi
                     std::string diffuse = e["material"].value("diffuse", "");
                     std::string normal = e["material"].value("normal", "");
                     std::string specular = e["material"].value("specular", "");

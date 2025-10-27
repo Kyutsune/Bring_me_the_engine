@@ -28,6 +28,10 @@ uniform float shininess;
 
 uniform vec3 viewPos;
 
+// Couleur de base du matériau (si pas de texture)
+uniform vec3 baseColor;
+uniform bool useVertexColor;
+
 // Toutes les composantes de la texture (diffuse, normal, spéculaire)
 uniform sampler2D texture_diffuse;
 uniform sampler2D texture_normal;
@@ -257,8 +261,20 @@ void main() {
             result += lighting;
         }
 
-    vec3 baseColor = useTexture ? texture(texture_diffuse, TexCoord).rgb : vColor;
-    result *= baseColor;
+    vec3 surfaceColor;
+
+    if (useTexture) {
+        // Cas texture diffuse
+        surfaceColor = texture(texture_diffuse, TexCoord).rgb;
+    } else {
+        // Cas sans texture
+        if (useVertexColor)
+            surfaceColor = vColor * baseColor; // combine les deux
+        else
+            surfaceColor = baseColor; // couleur uniforme du matériau
+    }
+
+    result *= surfaceColor;
     result = clamp(result, 0.0, 1.0);
 
     vec3 finalColor = mix(fogColor, result, fogFactor);

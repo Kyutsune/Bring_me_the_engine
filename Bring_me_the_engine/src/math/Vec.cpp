@@ -28,6 +28,17 @@ Vec3 Vec3::operator/(float scalar) const {
     return {x / scalar, y / scalar, z / scalar};
 }
 
+bool Vec3::operator==(const Vec3 & other) const {
+    float epsilon = 1e-6f;
+    return std::abs(x - other.x) < epsilon &&
+           std::abs(y - other.y) < epsilon &&
+           std::abs(z - other.z) < epsilon;
+}
+
+bool Vec3::operator!=(const Vec3 & other) const {
+    return !(*this == other);
+}
+
 Vec3 Vec3::operator+=(const Vec3 & other) {
     x += other.x;
     y += other.y;

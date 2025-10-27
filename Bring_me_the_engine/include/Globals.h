@@ -1,5 +1,6 @@
 #pragma once
 #include "engine/Scene.h"
+#include "math/Color.h"
 #include <unordered_map>
 
 // Pointeur global vers la scène actuelle, utilisé pour accéder à la caméra et aux entités
@@ -29,6 +30,8 @@ inline constexpr size_t MAX_LIGHTS = MAX_DIR_LIGHTS + MAX_PONC_LIGHTS;
 extern std::unordered_map<std::string, bool> g_entityExpanded;
 // Pour forcer l'ouverture de la section des objets dans le menu
 extern bool g_forceOpenObjectHeader;
+
+extern Vec3 g_selectedColor;
 
 /// Partie qui gérera le fait de séléctionner quel entité on veut afficher dans le menu
 enum TypeEntityCreated {

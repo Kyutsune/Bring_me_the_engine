@@ -60,6 +60,11 @@ void Mesh::draw() const {
     glBindVertexArray(0);
 }
 
+void Mesh::upload() {
+    glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, m_vertices.size() * sizeof(Vertex), m_vertices.data());
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
 
 AABB Mesh::getBoundingBox() const {
     if (m_vertices.empty()) {
