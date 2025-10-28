@@ -91,6 +91,7 @@ void LightingManager::applyLightning(Shader & shader, const Vec3 & viewPos) cons
 
 void LightingManager::applyPosLights(Shader & shader) const {
     shader.use();
+    //TODO: Faire en sorte que la couleur dépende de la lumière active, pas forcément m_colorMeshLight
     shader.set("color", Vec3(m_colorMeshLight));
 }
 

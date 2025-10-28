@@ -28,7 +28,7 @@ Shader::Shader(const std::string & vertexPath, const std::string & fragmentPath,
         } else {
             geometryShader = compileShader(GL_GEOMETRY_SHADER, geomCode);
             if (geometryShader) {
-                glAttachShader(ID, geometryShader); // ✅ NE PAS OUBLIER CETTE LIGNE !
+                glAttachShader(ID, geometryShader);
             }
         }
     }
@@ -64,18 +64,6 @@ void Shader::use() const {
     glUseProgram(ID);
 }
 
-void Shader::setBool(const std::string & name, bool value) const {
-    glUniform1i(glGetUniformLocation(ID, name.c_str()), (int)value);
-}
-
-void Shader::setInt(const std::string & name, int value) const {
-    glUniform1i(glGetUniformLocation(ID, name.c_str()), value);
-}
-
-void Shader::setFloat(const std::string & name, float value) const {
-    glUniform1f(glGetUniformLocation(ID, name.c_str()), value);
-}
-
 std::string Shader::loadFile(const std::string & path) const {
     std::ifstream file(path);
     if (!file.is_open()) {
@@ -102,6 +90,18 @@ GLuint Shader::compileShader(GLenum type, const std::string & source) const {
                   << infoLog << "\n";
     }
     return shader;
+}
+
+void Shader::setBool(const std::string & name, bool value) const {
+    glUniform1i(glGetUniformLocation(ID, name.c_str()), (int)value);
+}
+
+void Shader::setInt(const std::string & name, int value) const {
+    glUniform1i(glGetUniformLocation(ID, name.c_str()), value);
+}
+
+void Shader::setFloat(const std::string & name, float value) const {
+    glUniform1f(glGetUniformLocation(ID, name.c_str()), value);
 }
 
 void Shader::setMat4(const std::string & name, const Mat4 & mat) const {
@@ -139,15 +139,14 @@ void Shader::setArray(const std::string & name, const GLint * values, int count)
     }
 }
 
-
-void Shader::setVec3Array(const std::string& name, const glm::vec3* values, int count) {
+void Shader::setVec3Array(const std::string & name, const glm::vec3 * values, int count) {
     GLint location = glGetUniformLocation(ID, name.c_str());
     if (location != -1) {
         glUniform3fv(location, count, glm::value_ptr(values[0]));
     }
 }
 
-void Shader::setFloatArray(const std::string& name, const float* values, int count) {
+void Shader::setFloatArray(const std::string & name, const float * values, int count) {
     GLint location = glGetUniformLocation(ID, name.c_str());
     if (location != -1) {
         glUniform1fv(location, count, values);

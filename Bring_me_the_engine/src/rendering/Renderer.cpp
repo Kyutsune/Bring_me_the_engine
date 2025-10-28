@@ -71,9 +71,10 @@ void Renderer::renderLightEntities(const Scene & scene, const Mat4 & view, const
         if (lights[i].getType() != LightType::LIGHT_POINT)
             continue;
 
-        Vec3 lightPos = lights[i].getPosition(); // ou lights[i].position si c'est public
+        Vec3 lightPos = lights[i].getPosition();
         lightEntities[i]->getTransform().setTranslation(lightPos);
 
+        //TODO: Faire en sorte que la couleur dépende de la lumière active, pas forcément m_colorMeshLight
         scene.getLightingManager().applyPosLights(*m_lightShader);
         lightEntities[i]->draw_entity(*m_lightShader, view, projection);
     }
