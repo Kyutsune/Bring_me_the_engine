@@ -236,6 +236,15 @@ namespace Sections {
                         entity->setRotation(delta * entity->getRotation());
                         deltaRotation = {0, 0, 0};
                     }
+
+                    if (!entity->hasTextureDiffuse()) {
+                        ImGui::SeparatorText("Couleur de base");
+                        Vec3 baseColor = entity->getBaseColor();
+                        if (ImGui::ColorEdit3("Base Color", &baseColor.x)) {
+                            entity->setBaseColor(baseColor);
+                        }
+                    }
+
                     if (ImGui::Button("Réinitialiser la rotation")) {
                         entity->setRotation(Quat::identity());
                         deltaRotation = {0, 0, 0};
@@ -276,6 +285,7 @@ namespace Sections {
                 else if (currentItem == 1)
                     g_typeEntityCreated = TypeEntityCreated::Sphere;
             }
+            ImGui::ColorEdit3("Couleur", &g_selectedColor.x);
         }
     }
 

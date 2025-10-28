@@ -103,6 +103,13 @@ public:
         updateTransform();
     }
 
+    Vec3 getBaseColor() const { return m_material.m_baseColor; }
+    void setBaseColor(const Vec3 & color) {
+        m_material.m_baseColor = color;
+    }
+
+    bool hasTextureDiffuse() const { return m_material.m_diffuseTexture != nullptr; }
+
     // --- Fonctionnalités ---
     /**
      * @brief Dessine l'entité avec un shader donné
