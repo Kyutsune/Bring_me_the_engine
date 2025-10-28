@@ -31,8 +31,6 @@ void LightingManager::setupLightingOnScene() {
     m_lightingSettings.m_fogEnd = 30.0f;
     m_lightingSettings.m_fogDensity = 0.025f;
     m_lightingSettings.m_fogType = 0; // 0: aucun, 1: linéaire, 2: exp, 3: exp²
-
-    m_colorMeshLight = Color::yellow(); // Couleur par défaut pour les meshes de lumière
 }
 
 void LightingManager::applyLightning(Shader & shader, const Vec3 & viewPos) const {

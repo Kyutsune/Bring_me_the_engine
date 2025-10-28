@@ -61,8 +61,4 @@ private:
 
     /// Paramètres globaux de l'éclairage (intensité ambiante, etc.)
     LightSettings m_lightingSettings;
-
-    /// TODO: Pour l'instant on considère qu'une lumière ponctuelle est représentée par cette couleur
-    /// On pourrait éventuellement rajouter une texture pour cette lumière
-    Color m_colorMeshLight;
 };
