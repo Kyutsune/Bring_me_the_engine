@@ -72,6 +72,7 @@ public:
 
     // --- Accesseurs ---
     const std::string & getName() const { return m_entity_name; }
+    void setName(const std::string & newName) { m_entity_name = newName; }
     const Mat4 & getTransform() const { return m_transform; }
     Mat4 & getTransform() { return m_transform; }
     void setTransform(const Mat4 & newTransform);

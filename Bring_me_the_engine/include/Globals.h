@@ -26,6 +26,8 @@ inline constexpr size_t MAX_DIR_LIGHTS = 1;
 inline constexpr size_t MAX_PONC_LIGHTS = 8;
 inline constexpr size_t MAX_LIGHTS = MAX_DIR_LIGHTS + MAX_PONC_LIGHTS;
 
+extern float g_lightSize;
+
 // Partie qui nous servira à ouvrir ou non le menu quand on clique sur un objet
 extern std::unordered_map<std::string, bool> g_entityExpanded;
 // Pour forcer l'ouverture de la section des objets dans le menu

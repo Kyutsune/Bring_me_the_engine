@@ -1,6 +1,29 @@
 #include "math/intersect/IntersectUtils.h"
+#include "Globals.h"
 
 namespace IntersectUtils {
+
+    bool intersectSphere(const Ray & ray, const Vec3 & center, float radius, float tmax, float & tHit) {
+        Vec3 oc = ray.origin - center;
+        float a = ray.direction.dot(ray.direction);
+        float b = 2.0f * oc.dot(ray.direction);
+        float c = oc.dot(oc) - radius * radius;
+        float discriminant = b * b - 4 * a * c;
+
+        if (discriminant < 0)
+            return false;
+
+        float sqrtD = sqrt(discriminant);
+        float t1 = (-b - sqrtD) / (2 * a);
+        float t2 = (-b + sqrtD) / (2 * a);
+
+        float t = (t1 > 0) ? t1 : t2;
+        if (t < 0 || t > tmax)
+            return false;
+
+        tHit = t;
+        return true;
+    }
 
     bool intersect(const Vec3 & o, const Vec3 & d, const float tmax, const Vec3 & a, const Vec3 & b, const Vec3 & c,
                    Vec3 & intersection, Vec3 & normale_intersection, float & t) {
@@ -44,6 +67,27 @@ namespace IntersectUtils {
     }
 
     bool intersectEntity(const Ray & ray, const Entity & entity, IntersectionInfo & outInfo, float tmax) {
+        if (entity.getName().rfind("Light_", 0) == 0) {
+            Vec3 center = entity.getPosition();
+            Vec3 scale = entity.getTransform().getScale();
+            float radius = g_lightSize * std::max(scale.x, scale.y);
+            radius = std::max(radius, scale.z * g_lightSize);
+
+            float t;
+            if (IntersectUtils::intersectSphere(ray, center, radius, tmax, t)) {
+                if (t < outInfo.t) {
+                    outInfo.hit = true;
+                    outInfo.t = t;
+                    outInfo.position = ray.origin + t * ray.direction;
+                    outInfo.normal = normalize(outInfo.position - center);
+                    outInfo.entity = std::const_pointer_cast<Entity>(
+                        std::static_pointer_cast<const Entity>(entity.shared_from_this()));
+                    return true;
+                }
+            }
+            return false;
+        }
+
         const std::shared_ptr<Mesh> mesh = entity.getMesh();
         if (!mesh)
             return false;
@@ -90,5 +134,4 @@ namespace IntersectUtils {
         }
         return false;
     }
-
 }

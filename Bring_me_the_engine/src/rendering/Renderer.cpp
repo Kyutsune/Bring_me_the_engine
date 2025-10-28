@@ -66,9 +66,10 @@ void Renderer::renderEntities(const Scene & scene, const Mat4 & view, const Mat4
 void Renderer::renderLightEntities(const Scene & scene, const Mat4 & view, const Mat4 & projection) {
     const auto & lights = scene.getLightingManager().getLights();
     const std::vector<std::shared_ptr<Entity>> & lightEntities = scene.getLightEntities();
+    const Frustum & frustum = scene.getFrustum();
 
     for (size_t i = 0; i < lightEntities.size(); ++i) {
-        if (lights[i].getType() != LightType::LIGHT_POINT)
+        if (lights[i].getType() != LightType::LIGHT_POINT && !frustum.isBoxInFrustum(lightEntities[i]->getTransformedBoundingBox()))
             continue;
 
         Vec3 lightPos = lights[i].getPosition();
@@ -76,6 +77,7 @@ void Renderer::renderLightEntities(const Scene & scene, const Mat4 & view, const
 
         scene.getLightingManager().applyPosLights(*m_lightShader, lights[i].getColor());
         lightEntities[i]->draw_entity(*m_lightShader, view, projection);
+        lightEntities[i]->setVisible(true);
     }
 }
 

@@ -52,6 +52,7 @@ public:
 
     /// Accès aux entités représentant des sources de lumière
     inline const std::vector<std::shared_ptr<Entity>> & getLightEntities() const { return m_lightEntities; }
+    inline std::vector<std::shared_ptr<Entity>> & getLightEntitiesRef() { return m_lightEntities; }
 
     /// Accès au frustum pour le culling
     inline const Frustum & getFrustum() const { return m_frustum; }

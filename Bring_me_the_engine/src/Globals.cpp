@@ -20,6 +20,8 @@ size_t g_windowHeight = 800;
 
 size_t g_sceneIndex = 0; // Scene par défaut qui va nécessairement être une erreur, doit être initialisée
 
+float g_lightSize = 0.5f;
+
 Vec3 g_selectedColor = Color::rose();
 
 std::unordered_map<std::string, bool> g_entityExpanded;
