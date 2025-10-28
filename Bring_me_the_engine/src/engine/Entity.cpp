@@ -34,7 +34,6 @@ Entity::Entity(const Mat4 & transform, std::shared_ptr<Mesh> mesh,
     }
     m_entity_name = name.empty() ? "Unnamed Entity" : name;
 
-
     m_material.m_baseColor = g_selectedColor;
 
     setTransform(transform);
@@ -117,5 +116,5 @@ AABB Entity::getTransformedBoundingBox() const {
 }
 
 void Entity::updateTransform() {
-    m_transform = m_rotation.toMat4() * Mat4::Translation(m_position) * Mat4::Scale(m_scale);
+    m_transform = Mat4::Scale(m_scale) * m_rotation.toMat4() * Mat4::Translation(m_position);
 }

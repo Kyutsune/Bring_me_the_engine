@@ -5,6 +5,7 @@
 #include "geometry/Sphere.h"
 #include "rendering/GestionTextures/TextureManager.h"
 #include "system/PathResolver.h"
+#include "engine/MeshLoader/MeshLoaderObj.h"
 #include "Globals.h"
 #include <fstream>
 
@@ -277,7 +278,13 @@ namespace scenePreloaded {
                 } else if (type == "floor") {
                     mesh = createFloor<std::shared_ptr<Mesh>>(e.value("size", 25.0f), e.value("y", -1.0f));
                 } else {
-                    continue; // type non reconnu
+                    if (type.size() >= 4 && type.rfind(".obj") == (type.size() - 4)) {
+                        std::string objPath = PathResolver::getResourcePath(type);
+                        mesh = MeshLoaderOBJ::loadFromFile(objPath);
+                    } else {
+                        std::cerr << "⚠️ Type de mesh non reconnu : " << type << "Dans ScenePreloaded" << std::endl;
+                        continue;
+                    }
                 }
 
                 // Transformation

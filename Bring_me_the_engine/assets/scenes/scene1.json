@@ -29,7 +29,7 @@
       ],
       "intensity": 8,
       "attenuation": [
-        1.0,
+        1,
         0.7,
         1.8
       ],
@@ -79,7 +79,7 @@
       ],
       "intensity": 7,
       "attenuation": [
-        1.0,
+        1,
         0.7,
         1.8
       ],
@@ -105,6 +105,28 @@
           0,
           0,
           0
+        ],
+        "scale": [
+          1,
+          1,
+          1
+        ],
+        "rotate": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "name": "Bigguy_obj",
+      "mesh": "assets/obj/bigguy.obj",
+      "material": {},
+      "transform": {
+        "translate": [
+          5.48,
+          8.24,
+          -10.53
         ],
         "scale": [
           1,
