@@ -26,7 +26,7 @@ void LightingManager::setupLightingOnScene() {
     m_lightingSettings.m_shininess = 64.f;
 
     // Paramètres sur le fog
-    m_lightingSettings.m_fogColor = Color(8, 159, 255, 255); 
+    m_lightingSettings.m_fogColor = Color(8, 159, 255, 255);
     m_lightingSettings.m_fogStart = 15.0f;
     m_lightingSettings.m_fogEnd = 30.0f;
     m_lightingSettings.m_fogDensity = 0.025f;
@@ -89,10 +89,9 @@ void LightingManager::applyLightning(Shader & shader, const Vec3 & viewPos) cons
     shader.set("viewPos", viewPos);
 }
 
-void LightingManager::applyPosLights(Shader & shader) const {
+void LightingManager::applyPosLights(Shader & shader, const Vec3 & lightColor) const {
     shader.use();
-    //TODO: Faire en sorte que la couleur dépende de la lumière active, pas forcément m_colorMeshLight
-    shader.set("color", Vec3(m_colorMeshLight));
+    shader.set("color", lightColor);
 }
 
 const Light & LightingManager::getFirstDirectional() const {
@@ -137,9 +136,8 @@ std::vector<Light> * LightingManager::getPonctualLightsPtr() {
     return ponctualLights;
 }
 
-
-std::vector<Light*> LightingManager::getPonctualLightsRef() {
-    std::vector<Light*> ponctualLights;
+std::vector<Light *> LightingManager::getPonctualLightsRef() {
+    std::vector<Light *> ponctualLights;
     for (Light & light : m_lights) {
         if (light.getType() == LightType::LIGHT_POINT) {
             ponctualLights.push_back(&light);

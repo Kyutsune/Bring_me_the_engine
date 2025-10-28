@@ -8,7 +8,7 @@
 /**
  * @class LightingManager
  * @brief Gère toutes les lumières d'une scène et leur application dans les shaders.
- * 
+ *
  * Permet d'ajouter, supprimer et accéder aux lumières, de configurer les paramètres globaux
  * de l'éclairage, et de mettre à jour les uniforms GLSL pour le rendu.
  */
@@ -25,7 +25,7 @@ public:
 
     /**
      * @brief Met à jour les uniforms de lumière dans le shader.
-     * 
+     *
      * Envoie les informations de la lumière principale (directionnelle) et la position de la caméra.
      * @param shader Shader à mettre à jour
      * @param viewPos Position de la caméra
@@ -33,7 +33,7 @@ public:
     void applyLightning(Shader & shader, const Vec3 & viewPos) const;
 
     /// Applique les positions des lumières ponctuelles au shader
-    void applyPosLights(Shader & shader) const;
+    void applyPosLights(Shader & shader, const Vec3 & lightColor) const;
 
     /// Accès aux paramètres pour pouvoir les modifier
     LightSettings & settings() { return m_lightingSettings; }
