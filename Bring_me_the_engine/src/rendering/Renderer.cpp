@@ -98,12 +98,14 @@ void Renderer::renderFrame(const Scene & scene) {
     // TODO: Rendre les résultats affichés optionnels à une variable qu'on peut activer/désactiver au clavier et dans Imgui
     // TODO: Rendre les résultats affichés plus jolis (dans Imgui ou alors à l'écran carrément dans le moteur(je préfère la deuxième solution))
 
-    // --- Début mesure CPU totale ---
+    // Script pour les temps de rendu GPU et CPU
+
+    // Début mesure CPU totale
     static auto lastCpuStart = std::chrono::high_resolution_clock::now();
     auto cpuStart = std::chrono::high_resolution_clock::now();
     double cpuFrameTimeMs = std::chrono::duration<double, std::milli>(cpuStart - lastCpuStart).count();
     lastCpuStart = cpuStart;
-    // --- Fin mesure CPU totale ---
+    // Fin mesure CPU totale
 
     // Lecture des résultats
     double shadowTimeMs, sceneTimeMs;
@@ -130,12 +132,20 @@ void Renderer::renderFrame(const Scene & scene) {
         // FPS global (limité par le plus lent)
         double finalFps = std::min(cpuFps, gpuFps);
 
+        // Stockage des FPS finaux dans un buffer glissant
+        static std::deque<double> finalFpsBuffer;
+        finalFpsBuffer.push_back(finalFps);
+        if (finalFpsBuffer.size() > 100)
+            finalFpsBuffer.pop_front();
+
+        double avgFinalFps = std::accumulate(finalFpsBuffer.begin(), finalFpsBuffer.end(), 0.0) / finalFpsBuffer.size();
+
         // Affichage console
         std::cout << "GPU Frame time: " << std::fixed << std::setprecision(3) << totalTimeMs << " ms"
                   << " [Ombres: " << shadowTimeMs << " ms, Scène: " << sceneTimeMs << " ms]"
                   << " (Avg: " << avgMs << " ms, " << gpuFps << " FPS)"
                   << " | CPU: " << cpuFrameTimeMs << " ms (" << cpuFps << " FPS)"
-                  << " | FPS final: " << finalFps
+                  << " | FPS final: " << finalFps << " (Avg: " << avgFinalFps << " FPS)"
 
                   << std::endl;
     }
