@@ -3,6 +3,9 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "../external/stb/stb_image_write.h"
 
+#include <numeric>
+#include <deque>
+
 Renderer::Renderer(Shader * entityShader, Shader * lightShader, Shader * skyboxShader, Shader * boundingBoxShader, Shader * shadowShaderDirectionnal, Shader * shadowShaderPonctual)
     : m_entityShader(entityShader),
       m_lightShader(lightShader),
@@ -82,6 +85,40 @@ void Renderer::renderLightEntities(const Scene & scene, const Mat4 & view, const
 }
 
 void Renderer::renderFrame(const Scene & scene) {
+    // Rendu des ombres
+    m_shadowRenderTimer.start();
     m_shadowManager.renderShadows(scene);
+    m_shadowRenderTimer.stop();
+
+    // Rendu principal
+    m_sceneRenderTimer.start();
     renderScene(scene);
+    m_sceneRenderTimer.stop();
+
+
+    //TODO: Rendre les résultats affichés optionnels à une variable qu'on peut activer/désactiver au clavier et dans Imgui
+    //TODO: Rendre les résultats affichés plus jolis (dans Imgui ou alors à l'écran carrément dans le moteur(je préfère la deuxième solution))
+    // Lecture des résultats
+    double shadowTimeMs, sceneTimeMs;
+    if (m_shadowRenderTimer.getElapsedTime(shadowTimeMs) &&
+        m_sceneRenderTimer.getElapsedTime(sceneTimeMs)) {
+
+        double totalTimeMs = shadowTimeMs + sceneTimeMs;
+
+        // Stockage des temps dans un buffer glissant
+        static std::deque<double> frameTimes;
+        frameTimes.push_back(totalTimeMs);
+        if (frameTimes.size() > 100) // garde les 100 dernières frames
+            frameTimes.pop_front();
+
+        // Moyenne glissante
+        double avgMs = std::accumulate(frameTimes.begin(), frameTimes.end(), 0.0) / frameTimes.size();
+        double fps = 1000.0 / avgMs;
+
+        // Affichage console
+        std::cout << "GPU Frame time: " << totalTimeMs << " ms "
+                  << "(Avg: " << avgMs << " ms, " << fps << " FPS)"
+                  << " [Ombres: " << shadowTimeMs << " ms, Scène: " << sceneTimeMs << " ms]"
+                  << std::endl;
+    }
 }
