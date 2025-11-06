@@ -95,9 +95,16 @@ void Renderer::renderFrame(const Scene & scene) {
     renderScene(scene);
     m_sceneRenderTimer.stop();
 
+    // TODO: Rendre les résultats affichés optionnels à une variable qu'on peut activer/désactiver au clavier et dans Imgui
+    // TODO: Rendre les résultats affichés plus jolis (dans Imgui ou alors à l'écran carrément dans le moteur(je préfère la deuxième solution))
 
-    //TODO: Rendre les résultats affichés optionnels à une variable qu'on peut activer/désactiver au clavier et dans Imgui
-    //TODO: Rendre les résultats affichés plus jolis (dans Imgui ou alors à l'écran carrément dans le moteur(je préfère la deuxième solution))
+    // --- Début mesure CPU totale ---
+    static auto lastCpuStart = std::chrono::high_resolution_clock::now();
+    auto cpuStart = std::chrono::high_resolution_clock::now();
+    double cpuFrameTimeMs = std::chrono::duration<double, std::milli>(cpuStart - lastCpuStart).count();
+    lastCpuStart = cpuStart;
+    // --- Fin mesure CPU totale ---
+
     // Lecture des résultats
     double shadowTimeMs, sceneTimeMs;
     if (m_shadowRenderTimer.getElapsedTime(shadowTimeMs) &&
@@ -113,12 +120,23 @@ void Renderer::renderFrame(const Scene & scene) {
 
         // Moyenne glissante
         double avgMs = std::accumulate(frameTimes.begin(), frameTimes.end(), 0.0) / frameTimes.size();
-        double fps = 1000.0 / avgMs;
+
+        // FPS GPU
+        double gpuFps = 1000.0 / avgMs;
+
+        // FPS CPU (basé sur la durée entre deux frames)
+        double cpuFps = 1000.0 / cpuFrameTimeMs;
+
+        // FPS global (limité par le plus lent)
+        double finalFps = std::min(cpuFps, gpuFps);
 
         // Affichage console
-        std::cout << "GPU Frame time: " << totalTimeMs << " ms "
-                  << "(Avg: " << avgMs << " ms, " << fps << " FPS)"
+        std::cout << "GPU Frame time: " << std::fixed << std::setprecision(3) << totalTimeMs << " ms"
                   << " [Ombres: " << shadowTimeMs << " ms, Scène: " << sceneTimeMs << " ms]"
+                  << " (Avg: " << avgMs << " ms, " << gpuFps << " FPS)"
+                  << " | CPU: " << cpuFrameTimeMs << " ms (" << cpuFps << " FPS)"
+                  << " | FPS final: " << finalFps
+
                   << std::endl;
     }
 }
