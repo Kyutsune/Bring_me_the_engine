@@ -31,6 +31,8 @@ public:
     Renderer(Shader * entityShader, Shader * lightShader, Shader * skyboxShader,
              Shader * boundingBoxShader, Shader * shadowDirShader, Shader * shadowPoncShader);
 
+    ~Renderer();
+
     /**
      * @brief Rendu complet de la scène.
      *

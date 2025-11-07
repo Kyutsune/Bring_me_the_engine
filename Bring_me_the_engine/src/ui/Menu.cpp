@@ -73,9 +73,14 @@ void Menu::render() {
     // Deuxième partie du menu qui conditionnera elle tout ce qui touche à l'édition de la scène,
     // dont le fait de rajouter des entités, textures etc...
     setupMenuDisplay();
-    ImGui::Begin("Scene Editor", &m_menu_principal);
+    ImGui::Begin("Editeur de scène", &m_menu_principal);
     Sections::changeEntityCreatedSection(scene);
 
+    setupMenuDisplay();
+    ImGui::Begin("Performances", &m_menu_principal);
+    Sections::performanceSection();
+
+    ImGui::End();
     ImGui::End();
     ImGui::End();
 }

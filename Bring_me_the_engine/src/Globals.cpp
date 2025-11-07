@@ -29,3 +29,5 @@ bool g_forceOpenObjectHeader = false;
 
 TypeEntityCreated g_typeEntityCreated = TypeEntityCreated::Cube;
 bool g_isCreatingEntity = true;
+
+PerformanceStats g_perfStats = {};

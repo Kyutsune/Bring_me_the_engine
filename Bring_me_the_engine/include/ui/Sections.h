@@ -7,7 +7,7 @@ namespace Sections {
 
     /**
      * @brief Affiche la section de gestion des textures dans le menu principal.
-     * 
+     *
      * Permet de visualiser ou modifier les textures des objets présents dans la scène.
      * @param scene Pointeur vers la scène active.
      */
@@ -15,7 +15,7 @@ namespace Sections {
 
     /**
      * @brief Affiche la section de gestion des lumières globales.
-     * 
+     *
      * Permet d'activer/désactiver les lumières et d'ajuster leurs paramètres globaux.
      * @param scene Pointeur vers la scène active.
      */
@@ -23,7 +23,7 @@ namespace Sections {
 
     /**
      * @brief Section spécifique aux lumières directionnelles.
-     * 
+     *
      * Permet de modifier la direction, l'intensité et la couleur des lumières directionnelles.
      * @param scene Pointeur vers la scène active.
      */
@@ -31,7 +31,7 @@ namespace Sections {
 
     /**
      * @brief Section pour les lumières ponctuelles.
-     * 
+     *
      * Permet de modifier la position, l'intensité et la couleur des lumières ponctuelles.
      * @param scene Pointeur vers la scène active.
      */
@@ -44,7 +44,7 @@ namespace Sections {
 
     /**
      * @brief Section pour gérer le brouillard (fog) de la scène.
-     * 
+     *
      * Permet de régler la densité, la couleur et la distance du brouillard.
      * @param scene Pointeur vers la scène active.
      */
@@ -52,7 +52,7 @@ namespace Sections {
 
     /**
      * @brief Section pour la gestion des scènes.
-     * 
+     *
      * Permet de charger ou changer de scène.
      * @param scene Pointeur vers la scène active.
      * @return bool Vrai si la scène a été modifiée.
@@ -67,7 +67,7 @@ namespace Sections {
 
     /**
      * @brief Section pour manipuler les objets présents dans la scène.
-     * 
+     *
      * Permet de sélectionner, ajouter ou supprimer des entités.
      * @param scene Pointeur vers la scène active.
      */
@@ -75,10 +75,17 @@ namespace Sections {
 
     /**
      * @brief Section spécifique à l'édition de la scène lors de la création d'entités.
-     * 
+     *
      * Permet de changer le type d'entité à créer et ses propriétés.
      * @param scene Pointeur vers la scène active.
      */
     void changeEntityCreatedSection(Scene * scene);
+
+    /**
+     * @brief Section affichant les statistiques de performance.
+     *
+     * Affiche les temps de rendu GPU/CPU et les FPS.
+     */
+    void performanceSection();
 
 }

@@ -45,3 +45,15 @@ enum TypeEntityCreated {
 
 extern TypeEntityCreated g_typeEntityCreated;
 extern bool g_isCreatingEntity;
+
+
+struct PerformanceStats {
+    double gpuFrameTimeMs;
+    double gpuAvgMs;
+    double gpuFps;
+    double cpuFrameTimeMs;
+    double cpuFps;
+    double finalFps;
+    double avgFinalFps;
+};
+extern PerformanceStats g_perfStats; 

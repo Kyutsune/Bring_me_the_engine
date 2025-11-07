@@ -17,6 +17,16 @@ Renderer::Renderer(Shader * entityShader, Shader * lightShader, Shader * skyboxS
     initShadowMap();
 }
 
+Renderer::~Renderer(){
+    std::cout << "Destruction du Renderer" << std::endl;
+    std::cout<< "Performances moyennes durant l'exécution :" << std::endl;
+    std::cout << " - GPU Frame time: " << std::fixed << std::setprecision(3) << g_perfStats.gpuAvgMs << " ms"
+              << " (" << g_perfStats.gpuFps << " FPS)" << std::endl;
+    std::cout << " - CPU Frame time: " << std::fixed << std::setprecision(3) << g_perfStats.cpuFrameTimeMs << " ms"
+              << " (" << g_perfStats.cpuFps << " FPS)" << std::endl;
+    std::cout << " - FPS final moyen: " << std::fixed << std::setprecision(2) << g_perfStats.avgFinalFps << " FPS" << std::endl;
+};
+
 void Renderer::renderScene(const Scene & scene) {
     Mat4 view = scene.getCamera().getViewMatrix();
     Mat4 projection = scene.getCamera().getProjectionMatrix();
@@ -53,6 +63,8 @@ void Renderer::renderEntities(const Scene & scene, const Mat4 & view, const Mat4
     const std::vector<std::shared_ptr<Entity>> & entities = scene.getEntities();
 
     for (const std::shared_ptr<Entity> & entity : entities) {
+        //TODO: Ici on recalcule les bounding box transformée à chaque frame, ce qui est pas optimal
+        // On pourrait stocker la AABB(déjà fait) et ne la recalculer que si la transformation de l'entité change
         if (frustum.isBoxInFrustum(entity->getTransformedBoundingBox())) {
             entity->draw_entity(*m_entityShader, view, projection);
             entity->setVisible(true);
@@ -140,13 +152,13 @@ void Renderer::renderFrame(const Scene & scene) {
 
         double avgFinalFps = std::accumulate(finalFpsBuffer.begin(), finalFpsBuffer.end(), 0.0) / finalFpsBuffer.size();
 
-        // Affichage console
-        std::cout << "GPU Frame time: " << std::fixed << std::setprecision(3) << totalTimeMs << " ms"
-                  << " [Ombres: " << shadowTimeMs << " ms, Scène: " << sceneTimeMs << " ms]"
-                  << " (Avg: " << avgMs << " ms, " << gpuFps << " FPS)"
-                  << " | CPU: " << cpuFrameTimeMs << " ms (" << cpuFps << " FPS)"
-                  << " | FPS final: " << finalFps << " (Avg: " << avgFinalFps << " FPS)"
-
-                  << std::endl;
+        // Mise à jour des statistiques globales
+        g_perfStats.gpuFrameTimeMs = totalTimeMs;
+        g_perfStats.gpuAvgMs = avgMs;
+        g_perfStats.gpuFps = gpuFps;
+        g_perfStats.cpuFrameTimeMs = cpuFrameTimeMs;
+        g_perfStats.cpuFps = cpuFps;
+        g_perfStats.finalFps = finalFps;
+        g_perfStats.avgFinalFps = avgFinalFps;
     }
 }

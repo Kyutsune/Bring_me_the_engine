@@ -289,4 +289,17 @@ namespace Sections {
         }
     }
 
+    void performanceSection() {
+        if (ImGui::CollapsingHeader("Performances")) {
+            ImGui::Text("GPU Frame Time: %.3f ms", g_perfStats.gpuFrameTimeMs);
+            ImGui::Text("GPU Avg Time: %.3f ms", g_perfStats.gpuAvgMs);
+            ImGui::Text("GPU FPS: %.2f", g_perfStats.gpuFps);
+            ImGui::Separator();
+            ImGui::Text("CPU Frame Time: %.3f ms", g_perfStats.cpuFrameTimeMs);
+            ImGui::Text("CPU FPS: %.2f", g_perfStats.cpuFps);
+            ImGui::Separator();
+            ImGui::Text("FPS Final: %.2f", g_perfStats.finalFps);
+            ImGui::Text("FPS Final (moyenne): %.2f", g_perfStats.avgFinalFps);
+        }
+    }
 }
