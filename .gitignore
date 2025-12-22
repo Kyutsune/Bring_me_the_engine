@@ -31,6 +31,12 @@ Thumbs.db
 .VSCodeCounter/
 
 
+# === Visual Studio ===
+.vs/
+out/
+
+
+
 # === Generated files  ===
 *.o
 *.obj

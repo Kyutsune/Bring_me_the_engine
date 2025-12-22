@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.14)
 project(BringMeTheEngine)
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../bin)
+#set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/../bin)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -45,6 +45,11 @@ endforeach()
 
 # Créer une bibliothèque statique pour le moteur (sans main)
 add_library(BringMeTheEngine-lib STATIC ${ENGINE_LIB_SOURCES} ${IMGUI_SRC})
+
+add_compile_definitions(_USE_MATH_DEFINES)
+
+add_compile_definitions(PROJECT_ROOT_DIR="${CMAKE_SOURCE_DIR}/Bring_me_the_engine")
+
 
 # Include dirs pour la bibliothèque
 target_include_directories(BringMeTheEngine-lib

@@ -16,7 +16,7 @@ Menu::Menu(GLFWwindow * window) : window(window), scene(g_scene) {
 
     ImGuiIO & io = ImGui::GetIO();
     io.FontGlobalScale = 1.5f;
-    static std::string iniFilePath = PathResolver::getResourcePath("build/menu.ini").string();
+    static std::string iniFilePath = PathResolver::getResourcePath("build/menu.ini");
     io.IniFilename = iniFilePath.c_str();
 
     ImGui::LoadIniSettingsFromDisk(io.IniFilename);

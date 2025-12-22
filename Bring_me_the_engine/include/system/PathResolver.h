@@ -30,5 +30,5 @@ public:
      * @param relative Chemin relatif à partir du dossier des ressources.
      * @return std::filesystem::path Chemin absolu vers le fichier ressource.
      */
-    static std::filesystem::path getResourcePath(const std::string& relative);
+    static const std::string getResourcePath(const std::string& relative);
 };

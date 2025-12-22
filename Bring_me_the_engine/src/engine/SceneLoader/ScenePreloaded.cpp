@@ -59,7 +59,8 @@ namespace scenePreloaded {
             PathResolver::getResourcePath("assets/cubemap/Nuit_bleue/bottom.jpg"),
             PathResolver::getResourcePath("assets/cubemap/Nuit_bleue/top.jpg"),
             PathResolver::getResourcePath("assets/cubemap/Nuit_bleue/front.jpg"),
-            PathResolver::getResourcePath("assets/cubemap/Nuit_bleue/back.jpg")};
+            PathResolver::getResourcePath("assets/cubemap/Nuit_bleue/back.jpg")
+        };
 
         skybox = std::make_unique<Skybox>(faces);
 

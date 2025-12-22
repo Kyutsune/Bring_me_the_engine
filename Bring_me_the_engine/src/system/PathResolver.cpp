@@ -26,10 +26,6 @@ std::filesystem::path PathResolver::getExecutableDir() {
 }
 
 // Chemin relatif à partir de la racine du projet
-std::filesystem::path PathResolver::getResourcePath(const std::string& relative) {
-    auto execDir = getExecutableDir();
-
-    // On suppose que le binaire est dans bin/, donc on remonte d’un cran vers la racine
-    auto root = execDir.parent_path(); // ../ depuis bin/
-    return root / relative;
+const std::string PathResolver::getResourcePath(const std::string& relative) {
+    return (std::filesystem::path(PROJECT_ROOT_DIR) / relative).string();
 }

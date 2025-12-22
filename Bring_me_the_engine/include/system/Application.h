@@ -3,7 +3,7 @@
 #include <memory>
 #include <vector>
 
-class GLFWwindow;
+struct GLFWwindow;
 #include "rendering/Shader.h"
 #include "ui/Menu.h"
 

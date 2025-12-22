@@ -76,7 +76,7 @@ bool Application::initWindow() {
     }
 
     glfwMakeContextCurrent(m_window);
-    glfwSwapInterval(1); // VSync
+    glfwSwapInterval(0);
     return true;
 }
 
@@ -101,17 +101,16 @@ void Application::setupScene() {
 
 void Application::setupShaders() {
     const std::vector<std::pair<std::string, std::string>> shaderFiles = {
-        {"shaders/main_shaders/vertex.vert", "shaders/main_shaders/vertex.frag"},
-        {"shaders/main_shaders/light_pos.vert", "shaders/main_shaders/light_pos.frag"},
-        {"shaders/main_shaders/skybox.vert", "shaders/main_shaders/skybox.frag"},
-        {"shaders/debug/bounding_box.vert", "shaders/debug/bounding_box.frag"},
-        {"shaders/shadows/dir_shadow.vert", "shaders/shadows/dir_shadow.frag"},
-        {"shaders/shadows/ponc_shadow.vert", "shaders/shadows/ponc_shadow.frag"}};
+        {PathResolver::getResourcePath("shaders/main_shaders/vertex.vert"), PathResolver::getResourcePath("shaders/main_shaders/vertex.frag")},
+        {PathResolver::getResourcePath("shaders/main_shaders/light_pos.vert"), PathResolver::getResourcePath("shaders/main_shaders/light_pos.frag")},
+        {PathResolver::getResourcePath("shaders/main_shaders/skybox.vert"), PathResolver::getResourcePath("shaders/main_shaders/skybox.frag")},
+        {PathResolver::getResourcePath("shaders/debug/bounding_box.vert"), PathResolver::getResourcePath("shaders/debug/bounding_box.frag")},
+        {PathResolver::getResourcePath("shaders/shadows/dir_shadow.vert"), PathResolver::getResourcePath("shaders/shadows/dir_shadow.frag")},
+        {PathResolver::getResourcePath("shaders/shadows/ponc_shadow.vert"), PathResolver::getResourcePath("shaders/shadows/ponc_shadow.frag")}
+    };
 
     for (const auto & [vs, fs] : shaderFiles) {
-        auto shader = std::make_unique<Shader>(
-            PathResolver::getResourcePath(vs),
-            PathResolver::getResourcePath(fs));
+        auto shader = std::make_unique<Shader>(vs, fs);
 
         if (!shader || shader->ID == 0) {
             std::cerr << "Erreur de compilation shader : " << vs << " / " << fs << "\n";

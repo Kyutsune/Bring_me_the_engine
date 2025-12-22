@@ -7,7 +7,7 @@ namespace Callbacks {
 
     /**
      * @brief Fonction appelée lors d'un événement clavier.
-     * 
+     *
      * @param window Fenêtre GLFW ciblée.
      * @param key Code de la touche.
      * @param scancode Code scancode de la touche.
@@ -18,7 +18,7 @@ namespace Callbacks {
 
     /**
      * @brief Fonction appelée lors du déplacement de la souris.
-     * 
+     *
      * @param window Fenêtre GLFW ciblée.
      * @param xpos Position X de la souris dans la fenêtre.
      * @param ypos Position Y de la souris dans la fenêtre.
