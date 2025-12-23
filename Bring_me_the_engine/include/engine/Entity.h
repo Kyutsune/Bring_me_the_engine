@@ -119,7 +119,10 @@ public:
      * @param view Matrice view de la caméra
      * @param projection Matrice projection de la caméra
      */
-    void draw_entity(Shader & shader, const Mat4 & view, const Mat4 & projection);
+    void drawForward(Shader & shader, const Mat4 & view, const Mat4 & projection);
+
+
+    void drawGBuffer(Shader& shader, const Mat4& view, const Mat4& projection);
 
     /**
      * @brief Récupère la bounding box non transformée

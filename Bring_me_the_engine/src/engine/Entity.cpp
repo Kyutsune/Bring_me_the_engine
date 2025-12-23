@@ -54,7 +54,7 @@ Entity::Entity(const Mat4 & transform, std::shared_ptr<Mesh> mesh,
     updateTransform();
 }
 
-void Entity::draw_entity(Shader & shader, const Mat4 & view, const Mat4 & projection) {
+void Entity::drawForward(Shader & shader, const Mat4 & view, const Mat4 & projection) {
     updateCameraUniforms(shader, m_transform, view, projection);
 
     if (m_material.m_diffuseTexture && m_material.m_useDiffuse) {

@@ -399,6 +399,12 @@ Mat4 Mat4::inverse() const {
     return inv;
 }
 
+
+Mat4 Mat4::normal() const {
+    return inverse().transpose();
+}
+
+
 float Mat4::operator[](size_t index) const {
     if (index >= 16) {
         throw std::out_of_range("Mat4 index out of range");

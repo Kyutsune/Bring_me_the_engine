@@ -9,6 +9,7 @@
 #include "rendering/ShadowManager.h"
 #include "system/PathResolver.h"
 #include "rendering/GpuTimer.h"
+#include "rendering/GBuffer.h"
 
 /**
  * @brief Classe principale pour gérer le rendu de la scène.
@@ -28,8 +29,9 @@ public:
      * @param shadowDirShader Shader pour les ombres directionnelles.
      * @param shadowPoncShader Shader pour les ombres ponctuelles.
      */
-    Renderer(Shader * entityShader, Shader * lightShader, Shader * skyboxShader,
-             Shader * boundingBoxShader, Shader * shadowDirShader, Shader * shadowPoncShader);
+    Renderer(Shader* entityShader, Shader* lightShader, Shader* skyboxShader,
+        Shader* boundingBoxShader, Shader* shadowDirShader, Shader* shadowPoncShader,
+        Shader* gBufferShader);
 
     ~Renderer();
 
@@ -93,6 +95,15 @@ public:
      */
     void renderFrame(const Scene & scene);
 
+
+
+
+
+
+	// Partie de debug GBuffer
+    GLuint fullscreenVAO;
+
+
 private:
     Shader * m_entityShader;             ///< Shader pour les entités.
     Shader * m_lightShader;              ///< Shader pour les lumières.
@@ -100,12 +111,17 @@ private:
     Shader * m_boundingBoxShader;        ///< Shader pour les bounding boxes.
     Shader * m_shadowShaderDirectionnal; ///< Shader pour les ombres directionnelles.
     Shader * m_shadowShaderPonctual;     ///< Shader pour les ombres ponctuelles.
+	Shader* m_gBufferShader;             ///< Shader pour le G-Buffer (rendu différé).
 
     ShadowManager m_shadowManager; ///< Gestionnaire des shadow maps.
 
     GpuTimer m_mainRenderTimer;   ///< Timer GPU pour mesurer le temps de rendu principal.
     GpuTimer m_shadowRenderTimer; ///< Timer GPU pour mesurer le temps de rendu des ombres.
     GpuTimer m_sceneRenderTimer;  ///< Timer GPU pour mesurer le temps de rendu de la scène.
+
+
+	GBuffer m_gBuffer;           ///< G-Buffer pour le rendu différé.
+
 
     // AVENIR: utile seulement pour debug, pourrait être déplacé
     Shader m_quadDebugShader = Shader(

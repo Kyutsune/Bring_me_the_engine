@@ -209,12 +209,17 @@ struct Mat4 {
 
     Mat4 transpose() const;
     Mat4 inverse() const;
+    Mat4 normal() const;
 
     friend std::ostream & operator<<(std::ostream & os, const Mat4 & m);
     float operator[](size_t index) const;
     float & operator[](size_t index);
     Mat4 & operator=(const Mat4 & other);
 };
+
+// Alias pour une transformation 3D (matrice 4x4)
+// J'en avais marre de pas pouvoir dire aussi "Transform" dans le code
+using Transform = Mat4;
 
 /**
  * @brief Multiplie une matrice 4x4 par un vecteur 3D homogène (avec division par w).

@@ -6,14 +6,20 @@
 #include <numeric>
 #include <deque>
 
-Renderer::Renderer(Shader * entityShader, Shader * lightShader, Shader * skyboxShader, Shader * boundingBoxShader, Shader * shadowShaderDirectionnal, Shader * shadowShaderPonctual)
+Renderer::Renderer(Shader* entityShader, Shader* lightShader, Shader* skyboxShader, Shader* boundingBoxShader, Shader* shadowShaderDirectionnal, Shader* shadowShaderPonctual, Shader* gBufferShader)
     : m_entityShader(entityShader),
-      m_lightShader(lightShader),
-      m_skyboxShader(skyboxShader),
-      m_boundingBoxShader(boundingBoxShader),
-      m_shadowShaderDirectionnal(shadowShaderDirectionnal),
-      m_shadowShaderPonctual(shadowShaderPonctual),
-      m_shadowManager(shadowShaderDirectionnal, shadowShaderPonctual) {
+    m_lightShader(lightShader),
+    m_skyboxShader(skyboxShader),
+    m_boundingBoxShader(boundingBoxShader),
+    m_shadowShaderDirectionnal(shadowShaderDirectionnal),
+    m_shadowShaderPonctual(shadowShaderPonctual),
+    m_shadowManager(shadowShaderDirectionnal, shadowShaderPonctual),
+    m_gBufferShader(gBufferShader){
+	m_gBuffer.init();
+
+
+    glGenVertexArrays(1, &fullscreenVAO);
+
     initShadowMap();
 }
 
@@ -66,7 +72,7 @@ void Renderer::renderEntities(const Scene & scene, const Mat4 & view, const Mat4
         //TODO: Ici on recalcule les bounding box transformée à chaque frame, ce qui est pas optimal
         // On pourrait stocker la AABB(déjà fait) et ne la recalculer que si la transformation de l'entité change
         if (frustum.isBoxInFrustum(entity->getTransformedBoundingBox())) {
-            entity->draw_entity(*m_entityShader, view, projection);
+            entity->drawForward(*m_entityShader, view, projection);
             entity->setVisible(true);
         } else {
             entity->setVisible(false);
@@ -91,10 +97,13 @@ void Renderer::renderLightEntities(const Scene & scene, const Mat4 & view, const
         lightEntities[i]->getTransform().setTranslation(lightPos);
 
         scene.getLightingManager().applyPosLights(*m_lightShader, lights[i].getColor());
-        lightEntities[i]->draw_entity(*m_lightShader, view, projection);
+        lightEntities[i]->drawForward(*m_lightShader, view, projection);
         lightEntities[i]->setVisible(true);
     }
 }
+
+
+
 
 void Renderer::renderFrame(const Scene & scene) {
     // Rendu des ombres
@@ -107,11 +116,41 @@ void Renderer::renderFrame(const Scene & scene) {
     renderScene(scene);
     m_sceneRenderTimer.stop();
 
-    // TODO: Rendre les résultats affichés optionnels à une variable qu'on peut activer/désactiver au clavier et dans Imgui
-    // TODO: Rendre les résultats affichés plus jolis (dans Imgui ou alors à l'écran carrément dans le moteur(je préfère la deuxième solution))
+    // Rendu Gbuffer (pour l'instant que du test, par la suite tout le rendu sera en rendu différé)
+
+    static bool debugGbuffer = true;
+
+    if (debugGbuffer) {
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glViewport(0, 0, g_windowWidth, g_windowHeight);
+
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT);
+
+        m_gBuffer.render(scene, scene.getCamera(), *m_gBufferShader);
+        Shader& debugDepthShader = m_gBuffer.getDebugDepthShader();
+
+        debugDepthShader.use();
+
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, m_gBuffer.getDepthTexture());
+        debugDepthShader.set("depthTexture", 0);
+
+        debugDepthShader.set("nearPlane", scene.getCamera().getNearPlane());
+        debugDepthShader.set("farPlane", scene.getCamera().getFarPlane());
+
+        glDisable(GL_DEPTH_TEST);
+        glBindVertexArray(fullscreenVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glBindVertexArray(0);
+        glEnable(GL_DEPTH_TEST);
+    }
+
+
+
+
 
     // Script pour les temps de rendu GPU et CPU
-
     // Début mesure CPU totale
     static auto lastCpuStart = std::chrono::high_resolution_clock::now();
     auto cpuStart = std::chrono::high_resolution_clock::now();
