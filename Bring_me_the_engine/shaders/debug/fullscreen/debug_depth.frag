@@ -4,10 +4,17 @@ in vec2 uv;
 out vec4 FragColor;
 
 uniform sampler2D depthTexture;
+uniform sampler2D albedoTexture;
+uniform sampler2D normalTexture;
+
+uniform int debugMode; 
+// 0 = depth
+// 1 = albedo
+// 2 = normal
+
 uniform float nearPlane;
 uniform float farPlane;
 
-// Linearisation de la depth
 float linearizeDepth(float d)
 {
     float z = d * 2.0 - 1.0;
@@ -17,9 +24,16 @@ float linearizeDepth(float d)
 
 void main()
 {
-    float depth = texture(depthTexture, uv).r;
-    float linearDepth = linearizeDepth(depth) / farPlane;
-
-    // Bleu = profondeur
-    FragColor = vec4(0.0, 0.0, linearDepth, 1.0);
+    if (debugMode == 0) {
+        float depth = texture(depthTexture, uv).r;
+        float linearDepth = linearizeDepth(depth) / farPlane;
+        FragColor = vec4(vec3(linearDepth), 1.0);
+    }
+    else if (debugMode == 1) {
+        FragColor = texture(albedoTexture, uv);
+    }
+    else if (debugMode == 2) {
+        vec3 n = texture(normalTexture, uv).rgb;
+        FragColor = vec4(n, 1.0);
+    }
 }

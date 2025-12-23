@@ -16,7 +16,7 @@ bool GBuffer::init() {
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 
     m_gAlbedo = createTexture(GL_RGBA8, GL_COLOR_ATTACHMENT0);
-    m_gNormal = createTexture(GL_RGB16F, GL_COLOR_ATTACHMENT1);
+    m_gNormal = createTexture(GL_RGBA16F, GL_COLOR_ATTACHMENT1);
 
     glGenTextures(1, &m_gDepth);
     glBindTexture(GL_TEXTURE_2D, m_gDepth);
@@ -39,14 +39,25 @@ bool GBuffer::init() {
     return true;
 }
 
-GLuint GBuffer::createTexture(GLenum format, GLenum attachment) {
+GLuint GBuffer::createTexture(GLenum internalFormat, GLenum attachment) {
     GLuint tex;
     glGenTextures(1, &tex);
     glBindTexture(GL_TEXTURE_2D, tex);
-    glTexImage2D(GL_TEXTURE_2D, 0, format, m_width, m_height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
+
+    GLenum format = GL_RGBA;
+    GLenum type = GL_UNSIGNED_BYTE;
+
+    if (internalFormat == GL_RGB16F) {
+        format = GL_RGB;
+        type = GL_FLOAT;
+    }
+
+    glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, m_width, m_height, 0, format, type, nullptr);
+
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glFramebufferTexture2D(GL_FRAMEBUFFER, attachment, GL_TEXTURE_2D, tex, 0);
+
     return tex;
 }
 
@@ -87,10 +98,21 @@ int GBuffer::render(const Scene& scene, const Camera& camera, Shader & gBufferSh
     int drawnTriangles = 0;
     for (const std::shared_ptr<Entity>& entity : entities) {
         Transform model = entity->getTransform();
+
         Transform mvp = model * view * proj;
         gBufferShader.set("mvpMatrix", mvp, false);
-        Transform normalMatrix = model.normal();
-        gBufferShader.set("normalMatrix", normalMatrix);
+        gBufferShader.set("modelMatrix", model, false);
+        gBufferShader.set("normalMatrix", model.normal(), false);    
+
+        gBufferShader.set("baseColor", entity->getMaterial().m_baseColor);
+        if (entity->hasTextureDiffuse()) {
+            gBufferShader.set("useTexture", 1);
+            gBufferShader.set("albedoMap", 0);
+            entity->getMaterial().m_diffuseTexture->bind(0);
+        }
+        else {
+           gBufferShader.set("useTexture", 0);
+        }
 
         entity->getMesh()->draw();
     }

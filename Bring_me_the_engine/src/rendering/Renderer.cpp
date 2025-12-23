@@ -118,7 +118,7 @@ void Renderer::renderFrame(const Scene & scene) {
 
     // Rendu Gbuffer (pour l'instant que du test, par la suite tout le rendu sera en rendu différé)
 
-    static bool debugGbuffer = true;
+    static bool debugGbuffer = false;
 
     if (debugGbuffer) {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -132,9 +132,19 @@ void Renderer::renderFrame(const Scene & scene) {
 
         debugDepthShader.use();
 
+        debugDepthShader.set("debugMode", 2); // 0 depth / 1 albedo / 2 normal
+
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, m_gBuffer.getDepthTexture());
         debugDepthShader.set("depthTexture", 0);
+
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, m_gBuffer.getAlbedoTexture());
+        debugDepthShader.set("albedoTexture", 1);
+
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, m_gBuffer.getNormalTexture());
+        debugDepthShader.set("normalTexture", 2);
 
         debugDepthShader.set("nearPlane", scene.getCamera().getNearPlane());
         debugDepthShader.set("farPlane", scene.getCamera().getFarPlane());
