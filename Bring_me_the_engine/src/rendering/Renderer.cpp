@@ -120,6 +120,7 @@ void Renderer::renderFrame(const Scene & scene) {
 
     static bool debugGbuffer = false;
 
+
     if (debugGbuffer) {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         glViewport(0, 0, g_windowWidth, g_windowHeight);
