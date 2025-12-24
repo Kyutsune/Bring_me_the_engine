@@ -104,6 +104,10 @@ void Entity::drawForward(Shader & shader, const Mat4 & view, const Mat4 & projec
     m_mesh->draw();
 }
 
+void Entity::drawDeferred(Shader& shader, const Mat4& view, const Mat4& projection) {
+
+}
+
 void Entity::setTransform(const Mat4 & newTransform) {
     m_transform = newTransform;
     m_position = newTransform.getTranslation();

@@ -33,7 +33,9 @@ void Application::run() {
         m_shaders[3].get(),
         m_shaders[4].get(),
         m_shaders[5].get(),
-        m_shaders[6].get());
+        m_shaders[6].get(),
+        m_shaders[7].get()
+    );
 
     while (!glfwWindowShouldClose(m_window)) {
         glClearColor(0.f, 0.f, 0.f, 1.f);
@@ -108,7 +110,8 @@ void Application::setupShaders() {
         {PathResolver::getResourcePath("shaders/debug/bounding_box.vert"), PathResolver::getResourcePath("shaders/debug/bounding_box.frag")},
         {PathResolver::getResourcePath("shaders/shadows/dir_shadow.vert"), PathResolver::getResourcePath("shaders/shadows/dir_shadow.frag")},
         {PathResolver::getResourcePath("shaders/shadows/ponc_shadow.vert"), PathResolver::getResourcePath("shaders/shadows/ponc_shadow.frag")},
-        {PathResolver::getResourcePath("shaders/main_shaders/Gbuffer/Gbuffer.vert"), PathResolver::getResourcePath("shaders/main_shaders/Gbuffer/Gbuffer.frag")}
+        {PathResolver::getResourcePath("shaders/main_shaders/Rendu_indirect/Gbuffer/Gbuffer.vert"), PathResolver::getResourcePath("shaders/main_shaders/Rendu_indirect/Gbuffer/Gbuffer.frag")},
+        {PathResolver::getResourcePath("shaders/main_shaders/Rendu_indirect/Lighting_deferred/Lighting_deferred.vert"), PathResolver::getResourcePath("shaders/main_shaders/Rendu_indirect/Lighting_deferred/Lighting_deferred.frag")}
     };
 
     for (const auto & [vs, fs] : shaderFiles) {

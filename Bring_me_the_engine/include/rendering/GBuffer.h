@@ -44,5 +44,5 @@ private:
     Shader m_debugDepthShader = Shader(
             PathResolver::getResourcePath("shaders/debug/fullscreen/fullscreen.vert"),
             PathResolver::getResourcePath("shaders/debug/fullscreen/debug_depth.frag")
-        );;
+    );;
 };

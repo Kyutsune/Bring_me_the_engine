@@ -124,7 +124,7 @@ public:
     void drawForward(Shader & shader, const Mat4 & view, const Mat4 & projection);
 
 
-    void drawGBuffer(Shader& shader, const Mat4& view, const Mat4& projection);
+    void drawDeferred(Shader& shader, const Mat4& view, const Mat4& projection);
 
     /**
      * @brief Récupère la bounding box non transformée

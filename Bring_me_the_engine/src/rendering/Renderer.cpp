@@ -6,7 +6,8 @@
 #include <numeric>
 #include <deque>
 
-Renderer::Renderer(Shader* entityShader, Shader* lightShader, Shader* skyboxShader, Shader* boundingBoxShader, Shader* shadowShaderDirectionnal, Shader* shadowShaderPonctual, Shader* gBufferShader)
+Renderer::Renderer(Shader* entityShader, Shader* lightShader, Shader* skyboxShader, Shader* boundingBoxShader, Shader* shadowShaderDirectionnal, 
+                   Shader* shadowShaderPonctual, Shader* gBufferShader, Shader* deferredLightingShader)
     : m_entityShader(entityShader),
     m_lightShader(lightShader),
     m_skyboxShader(skyboxShader),
@@ -14,8 +15,11 @@ Renderer::Renderer(Shader* entityShader, Shader* lightShader, Shader* skyboxShad
     m_shadowShaderDirectionnal(shadowShaderDirectionnal),
     m_shadowShaderPonctual(shadowShaderPonctual),
     m_shadowManager(shadowShaderDirectionnal, shadowShaderPonctual),
-    m_gBufferShader(gBufferShader){
+    m_gBufferShader(gBufferShader),
+    m_deferredLightingShader(deferredLightingShader){
 	m_gBuffer.init();
+
+	m_renderType = RenderType::FORWARD;
 
 
     glGenVertexArrays(1, &fullscreenVAO);
@@ -33,7 +37,7 @@ Renderer::~Renderer(){
     std::cout << " - FPS final moyen: " << std::fixed << std::setprecision(2) << g_perfStats.avgFinalFps << " FPS" << std::endl;
 };
 
-void Renderer::renderScene(const Scene & scene) {
+void Renderer::renderSceneForward(const Scene & scene) {
     Mat4 view = scene.getCamera().getViewMatrix();
     Mat4 projection = scene.getCamera().getProjectionMatrix();
 
@@ -58,6 +62,42 @@ void Renderer::renderScene(const Scene & scene) {
     renderLightEntities(scene, view, projection);
 }
 
+void Renderer::renderSceneDeferred(const Scene& scene) {
+    Mat4 view = scene.getCamera().getViewMatrix();
+    Mat4 projection = scene.getCamera().getProjectionMatrix();
+
+	// On va remplir notre GBuffer avec les entités de la scène
+	m_gBuffer.render(scene, scene.getCamera(), *m_gBufferShader);
+
+	// A partir de la, on va réaliser la passe d'éclairage en utilisant le GBuffer via le shader d'éclairage différé
+	m_deferredLightingShader->use();
+
+	// Shadow manager : bind les ombres actives dans le shader
+	m_shadowManager.bindShadows(*m_deferredLightingShader, scene);
+
+	// Envoyer les lumières classiques
+	scene.getLightingManager().applyLightning(*m_deferredLightingShader, scene.getCamera().getPosition());
+
+
+    m_gBuffer.bindForReading(*m_deferredLightingShader);
+
+    m_deferredLightingShader->set("inverseView", view.inverse(), false);
+    m_deferredLightingShader->set("inverseProjection", projection.inverse(), false);
+	m_deferredLightingShader->set("camPos", scene.getCamera().getPosition());
+    
+
+
+    // Skybox
+    if (scene.getSkybox() && m_skyboxShader) {
+        renderSkybox(scene.getSkybox(), view, projection);
+    }
+
+    // Dessin des entités représentant les lumières
+    renderLightEntities(scene, view, projection);
+}
+
+
+
 void Renderer::renderSkybox(const Skybox * skybox, const Mat4 & view, const Mat4 & projection) {
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_CUBE_MAP, skybox->m_textureID);
@@ -71,7 +111,7 @@ void Renderer::renderEntities(const Scene & scene, const Mat4 & view, const Mat4
     for (const std::shared_ptr<Entity> & entity : entities) {
         //TODO: Ici on recalcule les bounding box transformée à chaque frame, ce qui est pas optimal
         // On pourrait stocker la AABB(déjà fait) et ne la recalculer que si la transformation de l'entité change
-        if (frustum.isBoxInFrustum(entity->getTransformedBoundingBox())) {
+        if (frustum.isBoxInFrustum(entity->getTransformedBoundingBox())) {   
             entity->drawForward(*m_entityShader, view, projection);
             entity->setVisible(true);
         } else {
@@ -113,12 +153,17 @@ void Renderer::renderFrame(const Scene & scene) {
 
     // Rendu principal
     m_sceneRenderTimer.start();
-    renderScene(scene);
+
+    if(m_renderType == RenderType::FORWARD)
+        renderSceneForward(scene);
+	else if (m_renderType == RenderType::DEFERRED)
+		renderSceneDeferred(scene);
+
     m_sceneRenderTimer.stop();
 
     // Rendu Gbuffer (pour l'instant que du test, par la suite tout le rendu sera en rendu différé)
 
-    static bool debugGbuffer = true;
+    static bool debugGbuffer = false;
 
     if (debugGbuffer) {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);

@@ -11,6 +11,12 @@
 #include "rendering/GpuTimer.h"
 #include "rendering/GBuffer.h"
 
+enum class RenderType {
+    FORWARD,
+	DEFERRED
+};
+
+
 /**
  * @brief Classe principale pour gérer le rendu de la scène.
  *
@@ -31,16 +37,24 @@ public:
      */
     Renderer(Shader* entityShader, Shader* lightShader, Shader* skyboxShader,
         Shader* boundingBoxShader, Shader* shadowDirShader, Shader* shadowPoncShader,
-        Shader* gBufferShader);
+        Shader* gBufferShader, Shader* deferredLighting);
 
     ~Renderer();
 
     /**
-     * @brief Rendu complet de la scène.
+     * @brief Rendu complet de la scène en rendu direct.
      *
      * @param scene Scène à rendre.
      */
-    void renderScene(const Scene & scene);
+    void renderSceneForward(const Scene & scene);
+
+
+    /**
+     * @brief Rendu complet de la scène en rendu différé.
+     *
+     * @param scene Scène à rendre.
+	 */
+	void renderSceneDeferred(const Scene& scene);
 
     /**
      * @brief Rendu de la skybox.
@@ -111,7 +125,8 @@ private:
     Shader * m_boundingBoxShader;        ///< Shader pour les bounding boxes.
     Shader * m_shadowShaderDirectionnal; ///< Shader pour les ombres directionnelles.
     Shader * m_shadowShaderPonctual;     ///< Shader pour les ombres ponctuelles.
-	Shader* m_gBufferShader;             ///< Shader pour le G-Buffer (rendu différé).
+	Shader * m_gBufferShader;             ///< Shader pour le G-Buffer (rendu différé).
+	Shader * m_deferredLightingShader;    ///< Shader pour la passe d'éclairage en rendu différé.
 
     ShadowManager m_shadowManager; ///< Gestionnaire des shadow maps.
 
@@ -121,6 +136,9 @@ private:
 
 
 	GBuffer m_gBuffer;           ///< G-Buffer pour le rendu différé.
+
+
+    RenderType m_renderType;
 
 
     // AVENIR: utile seulement pour debug, pourrait être déplacé

@@ -91,58 +91,62 @@ int GBuffer::render(const Scene& scene, const Camera& camera, Shader & gBufferSh
     gBufferShader.use();
     bindForWriting();
 
+
     glEnable(GL_DEPTH_TEST);
     glDepthMask(GL_TRUE);
 
     Transform view = camera.getViewMatrix();
     Transform proj = scene.getCamera().getProjectionMatrix();
     const std::vector<std::shared_ptr<Entity>>& entities = scene.getEntities();
+    const Frustum& frustum = scene.getFrustum();
 
 
     int drawnTriangles = 0;
     for (const std::shared_ptr<Entity>& entity : entities) {
-        Transform model = entity->getTransform(); 
+        if (frustum.isBoxInFrustum(entity->getTransformedBoundingBox())) {
+            Transform model = entity->getTransform();
 
-        Transform mvp = model * view * proj;
-        gBufferShader.set("mvpMatrix", mvp, false);
-        gBufferShader.set("modelMatrix", model, false);
-        gBufferShader.set("normalMatrix", model.normal(), false);    
+            Transform mvp = model * view * proj;
+            gBufferShader.set("mvpMatrix", mvp, false);
+            gBufferShader.set("modelMatrix", model, false);
+            gBufferShader.set("normalMatrix", model.normal(), false);
 
-        gBufferShader.set("baseColor", entity->getMaterial().m_baseColor);
-        gBufferShader.set("useVertexColor", entity->getMaterial().m_useVertexColor);
+            gBufferShader.set("baseColor", entity->getMaterial().m_baseColor);
+            gBufferShader.set("useVertexColor", entity->getMaterial().m_useVertexColor);
 
-		// Texture diffuse
-        if (entity->hasTextureDiffuse()) {
-            gBufferShader.set("useTexture", 1);
-            gBufferShader.set("albedoMap", 0);
-            entity->getMaterial().m_diffuseTexture->bind(0);
+            // Texture diffuse
+            if (entity->hasTextureDiffuse()) {
+                gBufferShader.set("useTexture", 1);
+                gBufferShader.set("albedoMap", 0);
+                entity->getMaterial().m_diffuseTexture->bind(0);
+            }
+            else {
+                gBufferShader.set("useTexture", 0);
+            }
+
+            // Normal map
+            if (entity->hasNormalMap()) {
+                gBufferShader.set("useNormalMap", true);
+                gBufferShader.set("normalMap", 1);
+                entity->getMaterial().m_normalMap->bind(1);
+            }
+            else {
+                gBufferShader.set("useNormalMap", false);
+            }
+
+            // Specular map
+            if (entity->hasSpecularMap()) {
+                gBufferShader.set("useSpecularMap", true);
+                gBufferShader.set("specularMap", 2);
+                entity->getMaterial().m_specularMap->bind(2);
+            }
+            else {
+                gBufferShader.set("useSpecularMap", false);
+            }
+
+
+            entity->getMesh()->draw();
         }
-        else {
-           gBufferShader.set("useTexture", 0);
-        }
-
-        // Normal map
-        if (entity->hasNormalMap()) {
-            gBufferShader.set("useNormalMap", true);
-            gBufferShader.set("normalMap", 1);
-            entity->getMaterial().m_normalMap->bind(1);
-        }
-        else {
-            gBufferShader.set("useNormalMap", false);
-        }
-
-        // Specular map
-        if (entity->hasSpecularMap()) {
-            gBufferShader.set("useSpecularMap", true);
-            gBufferShader.set("specularMap", 2);
-            entity->getMaterial().m_specularMap->bind(2);
-        }
-        else {
-            gBufferShader.set("useSpecularMap", false);
-        }
-
-
-        entity->getMesh()->draw();
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
