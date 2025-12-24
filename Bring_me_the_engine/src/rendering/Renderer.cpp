@@ -118,7 +118,7 @@ void Renderer::renderFrame(const Scene & scene) {
 
     // Rendu Gbuffer (pour l'instant que du test, par la suite tout le rendu sera en rendu différé)
 
-    static bool debugGbuffer = false;
+    static bool debugGbuffer = true;
 
     if (debugGbuffer) {
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
