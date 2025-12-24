@@ -17,6 +17,7 @@ bool GBuffer::init() {
 
     m_gAlbedo = createTexture(GL_RGBA8, GL_COLOR_ATTACHMENT0);
     m_gNormal = createTexture(GL_RGBA16F, GL_COLOR_ATTACHMENT1);
+	m_gSpecular = createTexture(GL_RGBA8, GL_COLOR_ATTACHMENT2);
 
     glGenTextures(1, &m_gDepth);
     glBindTexture(GL_TEXTURE_2D, m_gDepth);
@@ -25,8 +26,12 @@ bool GBuffer::init() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, m_gDepth, 0);
 
-    GLenum attachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
-    glDrawBuffers(2, attachments);
+    GLenum attachments[3] = {
+        GL_COLOR_ATTACHMENT0, // albedo
+        GL_COLOR_ATTACHMENT1, // normal
+        GL_COLOR_ATTACHMENT2  // specular
+    };
+    glDrawBuffers(3, attachments);
 
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
         std::cerr << "Erreur : GBuffer FBO incomplet !" << std::endl;
@@ -65,6 +70,7 @@ void GBuffer::release() {
     if (m_gAlbedo) { glDeleteTextures(1, &m_gAlbedo); m_gAlbedo = 0; }
     if (m_gNormal) { glDeleteTextures(1, &m_gNormal); m_gNormal = 0; }
     if (m_gDepth) { glDeleteTextures(1, &m_gDepth); m_gDepth = 0; }
+	if (m_gSpecular) { glDeleteTextures(1, &m_gSpecular); m_gSpecular = 0; }
     if (m_fbo) { glDeleteFramebuffers(1, &m_fbo); m_fbo = 0; }
 }
 
@@ -74,13 +80,11 @@ void GBuffer::bindForWriting() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void GBuffer::bindForReading() {
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, m_gAlbedo);
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, m_gNormal);
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, m_gDepth);
+void GBuffer::bindForReading(Shader & shader) {
+    glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, m_gDepth); shader.set("depthTexture", 0);
+	glActiveTexture(GL_TEXTURE1); glBindTexture(GL_TEXTURE_2D, m_gAlbedo); shader.set("albedoTexture", 1);
+	glActiveTexture(GL_TEXTURE2); glBindTexture(GL_TEXTURE_2D, m_gNormal); shader.set("normalTexture", 2);
+	glActiveTexture(GL_TEXTURE3); glBindTexture(GL_TEXTURE_2D, m_gSpecular); shader.set("specularTexture", 3);
 }
 
 int GBuffer::render(const Scene& scene, const Camera& camera, Shader & gBufferShader) {
@@ -97,7 +101,7 @@ int GBuffer::render(const Scene& scene, const Camera& camera, Shader & gBufferSh
 
     int drawnTriangles = 0;
     for (const std::shared_ptr<Entity>& entity : entities) {
-        Transform model = entity->getTransform();
+        Transform model = entity->getTransform(); 
 
         Transform mvp = model * view * proj;
         gBufferShader.set("mvpMatrix", mvp, false);
@@ -105,6 +109,9 @@ int GBuffer::render(const Scene& scene, const Camera& camera, Shader & gBufferSh
         gBufferShader.set("normalMatrix", model.normal(), false);    
 
         gBufferShader.set("baseColor", entity->getMaterial().m_baseColor);
+        gBufferShader.set("useVertexColor", entity->getMaterial().m_useVertexColor);
+
+		// Texture diffuse
         if (entity->hasTextureDiffuse()) {
             gBufferShader.set("useTexture", 1);
             gBufferShader.set("albedoMap", 0);
@@ -113,6 +120,27 @@ int GBuffer::render(const Scene& scene, const Camera& camera, Shader & gBufferSh
         else {
            gBufferShader.set("useTexture", 0);
         }
+
+        // Normal map
+        if (entity->hasNormalMap()) {
+            gBufferShader.set("useNormalMap", true);
+            gBufferShader.set("normalMap", 1);
+            entity->getMaterial().m_normalMap->bind(1);
+        }
+        else {
+            gBufferShader.set("useNormalMap", false);
+        }
+
+        // Specular map
+        if (entity->hasSpecularMap()) {
+            gBufferShader.set("useSpecularMap", true);
+            gBufferShader.set("specularMap", 2);
+            entity->getMaterial().m_specularMap->bind(2);
+        }
+        else {
+            gBufferShader.set("useSpecularMap", false);
+        }
+
 
         entity->getMesh()->draw();
     }

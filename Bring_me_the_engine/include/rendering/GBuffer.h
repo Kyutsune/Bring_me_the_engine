@@ -17,11 +17,12 @@ public:
     void release();
 
     void bindForWriting();
-    void bindForReading();
+    void bindForReading(Shader & shader);
 
     GLuint getAlbedoTexture() const { return m_gAlbedo; }
     GLuint getNormalTexture() const { return m_gNormal; }
     GLuint getDepthTexture() const { return m_gDepth; }
+    GLuint getSpecularTexture() const { return m_gSpecular; }
 
     int render(const Scene& scene, const Camera& camera, Shader & gBufferShader);
 	void renderDepth(const Scene& scene, const Camera& camera, Shader& depthShader);
@@ -34,6 +35,7 @@ private:
     GLuint m_gAlbedo = 0;
     GLuint m_gNormal = 0;
     GLuint m_gDepth = 0;
+	GLuint m_gSpecular = 0;
 
     GLuint createTexture(GLenum format, GLenum attachment);
 

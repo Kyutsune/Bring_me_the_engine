@@ -54,7 +54,7 @@ in vec3 Normal;
 in vec3 vColor;
 in vec2 TexCoord;
 in vec3 Tangent;
-in vec3 Bitangent;
+in vec3 Bitangent; // Pas utilisée
 
 out vec4 FragColor;
 

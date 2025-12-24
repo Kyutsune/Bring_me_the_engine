@@ -130,21 +130,13 @@ void Renderer::renderFrame(const Scene & scene) {
         m_gBuffer.render(scene, scene.getCamera(), *m_gBufferShader);
         Shader& debugDepthShader = m_gBuffer.getDebugDepthShader();
 
+
+		/// Partie pour le debug du bgbuffer qui sera enlevé par la suite, on vérifie juste que les textures sont bien remplies
         debugDepthShader.use();
 
-        debugDepthShader.set("debugMode", 2); // 0 depth / 1 albedo / 2 normal
-
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, m_gBuffer.getDepthTexture());
-        debugDepthShader.set("depthTexture", 0);
-
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, m_gBuffer.getAlbedoTexture());
-        debugDepthShader.set("albedoTexture", 1);
-
-        glActiveTexture(GL_TEXTURE2);
-        glBindTexture(GL_TEXTURE_2D, m_gBuffer.getNormalTexture());
-        debugDepthShader.set("normalTexture", 2);
+        debugDepthShader.set("debugMode", 1); // 0 depth / 1 albedo / 2 normal / 3 specular
+        
+		m_gBuffer.bindForReading(debugDepthShader);
 
         debugDepthShader.set("nearPlane", scene.getCamera().getNearPlane());
         debugDepthShader.set("farPlane", scene.getCamera().getFarPlane());

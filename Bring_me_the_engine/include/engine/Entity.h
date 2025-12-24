@@ -110,6 +110,8 @@ public:
     }
 
     bool hasTextureDiffuse() const { return m_material.m_diffuseTexture != nullptr; }
+	bool hasNormalMap() const { return m_material.m_normalMap != nullptr; }
+	bool hasSpecularMap() const { return m_material.m_specularMap != nullptr; }
 
     // --- Fonctionnalités ---
     /**
