@@ -15,9 +15,9 @@ bool GBuffer::init() {
     glGenFramebuffers(1, &m_fbo);
     glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
 
-    m_gAlbedo = createTexture(GL_RGBA8, GL_COLOR_ATTACHMENT0);
+    m_gAlbedo = createTexture(GL_RGBA16F, GL_COLOR_ATTACHMENT0);
     m_gNormal = createTexture(GL_RGBA16F, GL_COLOR_ATTACHMENT1);
-	m_gSpecular = createTexture(GL_RGBA8, GL_COLOR_ATTACHMENT2);
+	m_gSpecular = createTexture(GL_RGBA16F, GL_COLOR_ATTACHMENT2);
 
     glGenTextures(1, &m_gDepth);
     glBindTexture(GL_TEXTURE_2D, m_gDepth);
@@ -52,10 +52,10 @@ GLuint GBuffer::createTexture(GLenum internalFormat, GLenum attachment) {
     GLenum format = GL_RGBA;
     GLenum type = GL_UNSIGNED_BYTE;
 
-    if (internalFormat == GL_RGB16F) {
-        format = GL_RGB;
+    if (internalFormat == GL_RGB16F || internalFormat == GL_RGBA16F) {
+        format = (internalFormat == GL_RGBA16F) ? GL_RGBA : GL_RGB;
         type = GL_FLOAT;
-    }
+    }   
 
     glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, m_width, m_height, 0, format, type, nullptr);
 
@@ -81,10 +81,10 @@ void GBuffer::bindForWriting() {
 }
 
 void GBuffer::bindForReading(Shader & shader) {
-    glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, m_gDepth); shader.set("depthTexture", 0);
-	glActiveTexture(GL_TEXTURE1); glBindTexture(GL_TEXTURE_2D, m_gAlbedo); shader.set("albedoTexture", 1);
-	glActiveTexture(GL_TEXTURE2); glBindTexture(GL_TEXTURE_2D, m_gNormal); shader.set("normalTexture", 2);
-	glActiveTexture(GL_TEXTURE3); glBindTexture(GL_TEXTURE_2D, m_gSpecular); shader.set("specularTexture", 3);
+    glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, m_gDepth); shader.set("gDepth", 0);
+	glActiveTexture(GL_TEXTURE1); glBindTexture(GL_TEXTURE_2D, m_gAlbedo); shader.set("gAlbedo", 1);
+	glActiveTexture(GL_TEXTURE2); glBindTexture(GL_TEXTURE_2D, m_gNormal); shader.set("gNormal", 2);
+	glActiveTexture(GL_TEXTURE3); glBindTexture(GL_TEXTURE_2D, m_gSpecular); shader.set("gSpecular", 3);
 }
 
 int GBuffer::render(const Scene& scene, const Camera& camera, Shader & gBufferShader) {
@@ -109,13 +109,12 @@ int GBuffer::render(const Scene& scene, const Camera& camera, Shader & gBufferSh
             Transform mvp = model * view * proj;
             gBufferShader.set("mvpMatrix", mvp, false);
             gBufferShader.set("modelMatrix", model, false);
-            gBufferShader.set("normalMatrix", model.normal(), false);
 
             gBufferShader.set("baseColor", entity->getMaterial().m_baseColor);
             gBufferShader.set("useVertexColor", entity->getMaterial().m_useVertexColor);
 
             // Texture diffuse
-            if (entity->hasTextureDiffuse()) {
+            if (entity->hasTextureDiffuse() && entity->doItUseTextureDiffuse()) {
                 gBufferShader.set("useTexture", 1);
                 gBufferShader.set("albedoMap", 0);
                 entity->getMaterial().m_diffuseTexture->bind(0);
@@ -125,7 +124,7 @@ int GBuffer::render(const Scene& scene, const Camera& camera, Shader & gBufferSh
             }
 
             // Normal map
-            if (entity->hasNormalMap()) {
+            if (entity->hasNormalMap() && entity->doItUseNormalMap()) {
                 gBufferShader.set("useNormalMap", true);
                 gBufferShader.set("normalMap", 1);
                 entity->getMaterial().m_normalMap->bind(1);
@@ -135,7 +134,7 @@ int GBuffer::render(const Scene& scene, const Camera& camera, Shader & gBufferSh
             }
 
             // Specular map
-            if (entity->hasSpecularMap()) {
+            if (entity->hasSpecularMap() && entity->doItUseSpecularMap()) {
                 gBufferShader.set("useSpecularMap", true);
                 gBufferShader.set("specularMap", 2);
                 entity->getMaterial().m_specularMap->bind(2);
@@ -153,29 +152,18 @@ int GBuffer::render(const Scene& scene, const Camera& camera, Shader & gBufferSh
     return 0;
 }
 
+void GBuffer::blitDepthToDefaultBuffer() {
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, m_fbo);
 
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
-void GBuffer::renderDepth(const Scene& scene, const Camera& camera, Shader& depthShader) {
-    bindForWriting();
-
-    glEnable(GL_DEPTH_TEST);
-    glClear(GL_DEPTH_BUFFER_BIT);
-
-    depthShader.use();
-
-    Mat4 view = camera.getViewMatrix();
-    Mat4 proj = camera.getProjectionMatrix();
-
-    const auto& entities = scene.getEntities();
-
-    for (const auto& entity : entities) {
-        Mat4 model = entity->getTransform();
-        Mat4 mvp = proj * view * model;
-        depthShader.set("mvpMatrix", mvp, true);
-
-        entity->getMesh()->draw();
-    }
+	// On copie la depht calculée vers l'écran
+    glBlitFramebuffer(
+        0, 0, m_width, m_height,
+        0, 0, m_width, m_height,
+        GL_DEPTH_BUFFER_BIT,
+        GL_NEAREST
+    );
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
 }

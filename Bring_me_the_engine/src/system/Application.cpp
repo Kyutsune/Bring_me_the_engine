@@ -36,6 +36,7 @@ void Application::run() {
         m_shaders[6].get(),
         m_shaders[7].get()
     );
+	g_renderer = &renderer;
 
     while (!glfwWindowShouldClose(m_window)) {
         glClearColor(0.f, 0.f, 0.f, 1.f);

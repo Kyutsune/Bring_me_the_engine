@@ -63,13 +63,14 @@ uniform float pointLightFarPlanes[MAX_POINT_LIGHTS];
 uniform float pointLightIntensities[MAX_POINT_LIGHTS];
 
 // Reconstruit la position Monde à partir du Depth Buffer
-vec3 WorldPosFromDepth(float depth) {
-    float z = depth * 2.0 - 1.0; // Retour en NDC
-    vec4 clipSpacePosition = vec4(TexCoord * 2.0 - 1.0, z, 1.0);
-    vec4 viewSpacePosition = inverseProjection * clipSpacePosition;
-    viewSpacePosition /= viewSpacePosition.w;
-    vec4 worldSpacePosition = inverseView * viewSpacePosition;
-    return worldSpacePosition.xyz;
+vec3 WorldPosFromDepth(vec2 uv, float depth) {
+    vec4 clipPos = vec4(uv * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
+    
+    vec4 viewPos = inverseProjection * clipPos;
+    viewPos /= viewPos.w;
+    
+    vec4 worldPos = inverseView * viewPos;
+    return worldPos.xyz;
 }
 
 // Ta logique de Fog
@@ -171,6 +172,7 @@ vec3 calcLight(Light light, vec3 norm, vec3 viewDir, vec3 fragPos, float shadowF
         lightIntensity *= 0.1; // Ton facteur arbitraire du forward
     } else {
         lightDir = vec3(0.0);
+        attenuation = 1.0;
     }
 
     float diff = max(dot(norm, lightDir), 0.0);
@@ -193,17 +195,19 @@ void main()
     // 1. Récupération des données du G-Buffer
     float depth = texture(gDepth, TexCoord).r;
 
+
     if(depth >= 1.0) {
         discard;
     }
     
-    vec3 FragPos = WorldPosFromDepth(depth);
+    vec3 FragPos = WorldPosFromDepth(TexCoord, depth);
+
     vec3 Albedo = texture(gAlbedo, TexCoord).rgb;
     // Décodage de la normale : [0,1] -> [-1,1]
-    vec3 Normal = normalize(texture(gNormal, TexCoord).rgb * 2.0 - 1.0);
+    vec3 Normal = normalize(texture(gNormal, TexCoord).rgb);
     vec3 SpecularData = texture(gSpecular, TexCoord).rgb;
 
-    // Conversion SpecularData en float pour le lighting (comme dans ton forward)
+    // Conversion SpecularData en float pour le lighting 
     float specMapVal = dot(SpecularData, vec3(0.299, 0.587, 0.114));
 
     // 2. Calculs préliminaires
@@ -218,7 +222,7 @@ void main()
     int pointLightShadowIndex = 0;
 
     for (int i = 0; i < numLights; i++) {
-        vec3 lighting = calcLight(lights[i], Normal, viewDir, FragPos, shadowFactor, SpecularData); // J'utilise SpecularData directement si c'est de la couleur, sinon specMapVal
+        vec3 lighting = calcLight(lights[i], Normal, viewDir, FragPos, shadowFactor, vec3(specMapVal));
 
         if (lights[i].type == 0) { 
             if (usePointShadow && pointLightShadowIndex < pointLightNumber) {
@@ -233,9 +237,6 @@ void main()
     result *= Albedo;
     result = clamp(result, 0.0, 1.0);
 
-    // 4. Mix Fog
-    // Note : si on est sur le fond (skybox), le fogFactor risque d'écraser la skybox. 
-    // Souvent en deferred on gère la skybox à part ou via un stencil.
     vec3 finalColor = mix(fogColor, result, fogFactor);
     
     FragColor = vec4(finalColor, 1.0);

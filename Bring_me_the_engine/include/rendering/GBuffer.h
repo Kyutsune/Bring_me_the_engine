@@ -27,6 +27,8 @@ public:
     int render(const Scene& scene, const Camera& camera, Shader & gBufferShader);
 	void renderDepth(const Scene& scene, const Camera& camera, Shader& depthShader);
 
+    void blitDepthToDefaultBuffer();
+
 	Shader& getDebugDepthShader() { return m_debugDepthShader; }
 
 private:

@@ -37,10 +37,11 @@ void main()
     vec3 albedo = baseColor;
     if(useTexture == 1)
         albedo = texture(albedoMap, vUV).rgb;
-
+    else
+        albedo = baseColor;
     gAlbedo = vec4(albedo, 1.0);
 
-    gNormal = getNormal() * 0.5 + 0.5;
+    gNormal = getNormal();
 
 
 

@@ -1,5 +1,6 @@
 #pragma once
 #include "engine/Scene.h"
+#include "rendering/Renderer.h"
 #include "math/Color.h"
 #include <unordered_map>
 
@@ -8,6 +9,8 @@ extern Scene * g_scene;
 extern std::unique_ptr<Scene> g_scenePtr;
 // entier non signé représentant l'index de la scène actuelle
 extern size_t g_sceneIndex;
+
+extern Renderer * g_renderer;
 
 // Fonction qui va nous permettre de recharger la scène actuelle
 void reloadScene(const std::size_t & index);

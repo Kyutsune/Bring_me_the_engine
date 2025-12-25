@@ -34,8 +34,6 @@ void LightingManager::setupLightingOnScene() {
 }
 
 void LightingManager::applyLightning(Shader & shader, const Vec3 & viewPos) const {
-    shader.use();
-
     int activeCount = 0;
     for (const auto & light : m_lights) {
         if (light.isActive())

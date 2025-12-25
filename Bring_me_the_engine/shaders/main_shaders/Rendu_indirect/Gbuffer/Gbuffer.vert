@@ -11,7 +11,6 @@ layout(location = 5) in vec3 aBitangent;
 
 uniform mat4 mvpMatrix;
 uniform mat4 modelMatrix;
-uniform mat4 normalMatrix;
 
 out vec3 vWorldPos;
 out vec3 vNormal;
@@ -25,7 +24,7 @@ void main()
     vWorldPos = worldPos.xyz;
     vUV = aUV;
 
-    mat3 normMat = mat3(normalMatrix);
+    mat3 normMat = mat3(transpose(inverse(modelMatrix)));
 
     vNormal    = normalize(normMat * aNormal);
     vTangent   = normalize(normMat * aTangent);

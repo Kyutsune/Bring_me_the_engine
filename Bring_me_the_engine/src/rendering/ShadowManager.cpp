@@ -38,8 +38,8 @@ void ShadowManager::bindShadows(Shader & shader, const Scene & scene) {
         shader.set("lightSpaceMatrix", m_directionalShadow.getLightSpaceMatrix(), false);
         shader.set("dirLightDirection", dirLight.getDirection());
 
-        m_directionalShadow.bindTexture(GL_TEXTURE3);
-        shader.set("shadowMap", 3);
+        m_directionalShadow.bindTexture(GL_TEXTURE4);
+        shader.set("shadowMap", 4);
         shader.set("useDirectionalShadow", true);
     } else {
         shader.set("useDirectionalShadow", false);
@@ -56,20 +56,20 @@ void ShadowManager::bindShadows(Shader & shader, const Scene & scene) {
 
     // Bind les shadow maps actives (jusqu'à count)
     for (size_t i = 0; i < count; ++i) {
-        m_punctualShadows[i].bindTexture(GL_TEXTURE4 + i);
+        m_punctualShadows[i].bindTexture(GL_TEXTURE5 + i);
     }
     // Si il y a moins que MAX_PONC_LIGHTS, il faut binder les autres
     // Donc on bind de count à max_ponc_lights des textures nulles pour avoir le tableau
     // complet sinon le rendu du shader sera bizarre
     for (size_t i = count; i < MAX_PONC_LIGHTS; ++i) {
-        glActiveTexture(GL_TEXTURE4 + i);
+        glActiveTexture(GL_TEXTURE5 + i);
         glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
     }
 
     // Préparer un tableau complet de MAX_PONC_LIGHTS unités de texture
     std::vector<GLint> units(MAX_PONC_LIGHTS);
     for (size_t i = 0; i < MAX_PONC_LIGHTS; ++i) {
-        units[i] = 4 + static_cast<GLint>(i);
+        units[i] = 5 + static_cast<GLint>(i);
     }
     shader.setArray("pointShadowMaps", units.data(), static_cast<int>(MAX_PONC_LIGHTS));
 

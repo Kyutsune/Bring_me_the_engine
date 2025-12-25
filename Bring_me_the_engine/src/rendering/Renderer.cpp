@@ -19,7 +19,8 @@ Renderer::Renderer(Shader* entityShader, Shader* lightShader, Shader* skyboxShad
     m_deferredLightingShader(deferredLightingShader){
 	m_gBuffer.init();
 
-	m_renderType = RenderType::FORWARD;
+	m_renderType = RenderType::DEFERRED;
+    std::cout << "[RENDERER] Render Type init on " << (m_renderType == RenderType::FORWARD ? "FORWARD" : "DEFERRED") << " rendering" << std::endl;
 
 
     glGenVertexArrays(1, &fullscreenVAO);
@@ -66,10 +67,15 @@ void Renderer::renderSceneDeferred(const Scene& scene) {
     Mat4 view = scene.getCamera().getViewMatrix();
     Mat4 projection = scene.getCamera().getProjectionMatrix();
 
+
+
 	// On va remplir notre GBuffer avec les entités de la scène
 	m_gBuffer.render(scene, scene.getCamera(), *m_gBufferShader);
 
 	// A partir de la, on va réaliser la passe d'éclairage en utilisant le GBuffer via le shader d'éclairage différé
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 	m_deferredLightingShader->use();
 
 	// Shadow manager : bind les ombres actives dans le shader
@@ -84,15 +90,21 @@ void Renderer::renderSceneDeferred(const Scene& scene) {
     m_deferredLightingShader->set("inverseView", view.inverse(), false);
     m_deferredLightingShader->set("inverseProjection", projection.inverse(), false);
 	m_deferredLightingShader->set("camPos", scene.getCamera().getPosition());
-    
 
+    glDisable(GL_DEPTH_TEST);
+    glBindVertexArray(fullscreenVAO);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glBindVertexArray(0);
+    glEnable(GL_DEPTH_TEST);
+
+
+    m_gBuffer.blitDepthToDefaultBuffer();
 
     // Skybox
     if (scene.getSkybox() && m_skyboxShader) {
         renderSkybox(scene.getSkybox(), view, projection);
     }
-
-    // Dessin des entités représentant les lumières
+	// Dessin des entités représentant les lumières
     renderLightEntities(scene, view, projection);
 }
 

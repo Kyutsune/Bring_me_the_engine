@@ -2,6 +2,7 @@
 
 std::unique_ptr<Scene> g_scenePtr = nullptr;
 Scene * g_scene = nullptr;
+Renderer* g_renderer = nullptr;
 
 void reloadScene(const std::size_t & index) {
     g_scenePtr = std::make_unique<Scene>(index);
@@ -12,7 +13,7 @@ Scene & getScene() {
     return *g_scene;
 }
 
-float g_sensibility_depl = 0.10f;
+float g_sensibility_depl = 0.01f;
 float g_sensibility_rot = 0.01f;
 
 size_t g_windowWidth = 1600;

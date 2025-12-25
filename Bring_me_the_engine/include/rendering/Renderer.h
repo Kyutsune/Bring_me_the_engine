@@ -110,7 +110,15 @@ public:
     void renderFrame(const Scene & scene);
 
 
+    void toggleRenderType(){
+        if (m_renderType == RenderType::FORWARD)
+            m_renderType = RenderType::DEFERRED;
+        else
+            m_renderType = RenderType::FORWARD;
 
+        std::cout<< "Render type switched to: "
+			<< (m_renderType == RenderType::FORWARD ? "FORWARD" : "DEFERRED") << std::endl;
+    }
 
 
 

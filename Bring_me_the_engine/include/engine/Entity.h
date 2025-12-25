@@ -109,8 +109,13 @@ public:
         m_material.m_baseColor = color;
     }
 
+	bool doItUseTextureDiffuse() const { return m_material.m_useDiffuse; }
     bool hasTextureDiffuse() const { return m_material.m_diffuseTexture != nullptr; }
+
+	bool doItUseNormalMap() const { return m_material.m_useNormal; }
 	bool hasNormalMap() const { return m_material.m_normalMap != nullptr; }
+    
+	bool doItUseSpecularMap() const { return m_material.m_useSpecular; }
 	bool hasSpecularMap() const { return m_material.m_specularMap != nullptr; }
 
     // --- Fonctionnalités ---
