@@ -67,8 +67,6 @@ void Renderer::renderSceneDeferred(const Scene& scene) {
     Mat4 view = scene.getCamera().getViewMatrix();
     Mat4 projection = scene.getCamera().getProjectionMatrix();
 
-
-
 	// On va remplir notre GBuffer avec les entités de la scène
 	m_gBuffer.render(scene, scene.getCamera(), *m_gBufferShader);
 
@@ -81,12 +79,13 @@ void Renderer::renderSceneDeferred(const Scene& scene) {
 	// Shadow manager : bind les ombres actives dans le shader
 	m_shadowManager.bindShadows(*m_deferredLightingShader, scene);
 
-	// Envoyer les lumières classiques
+	// Envoi des lumières
 	scene.getLightingManager().applyLightning(*m_deferredLightingShader, scene.getCamera().getPosition());
 
-
+    // Bind des textures du GBuffer
     m_gBuffer.bindForReading(*m_deferredLightingShader);
 
+    // Les derniers uniforms nécessaires au rendu
     m_deferredLightingShader->set("inverseView", view.inverse(), false);
     m_deferredLightingShader->set("inverseProjection", projection.inverse(), false);
 	m_deferredLightingShader->set("camPos", scene.getCamera().getPosition());
@@ -174,39 +173,6 @@ void Renderer::renderFrame(const Scene & scene) {
     m_sceneRenderTimer.stop();
 
     // Rendu Gbuffer (pour l'instant que du test, par la suite tout le rendu sera en rendu différé)
-
-    static bool debugGbuffer = false;
-
-    if (debugGbuffer) {
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        glViewport(0, 0, g_windowWidth, g_windowHeight);
-
-        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        m_gBuffer.render(scene, scene.getCamera(), *m_gBufferShader);
-        Shader& debugDepthShader = m_gBuffer.getDebugDepthShader();
-
-
-		/// Partie pour le debug du bgbuffer qui sera enlevé par la suite, on vérifie juste que les textures sont bien remplies
-        debugDepthShader.use();
-
-        debugDepthShader.set("debugMode", 1); // 0 depth / 1 albedo / 2 normal / 3 specular
-        
-		m_gBuffer.bindForReading(debugDepthShader);
-
-        debugDepthShader.set("nearPlane", scene.getCamera().getNearPlane());
-        debugDepthShader.set("farPlane", scene.getCamera().getFarPlane());
-
-        glDisable(GL_DEPTH_TEST);
-        glBindVertexArray(fullscreenVAO);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-        glBindVertexArray(0);
-        glEnable(GL_DEPTH_TEST);
-    }
-
-
-
 
 
     // Script pour les temps de rendu GPU et CPU

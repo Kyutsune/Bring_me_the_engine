@@ -5,7 +5,7 @@ out vec2 TexCoord;
 void main()
 {
 
-    // Définition du triangle géant qui couvre l'écran
+    // DÃ©finition du triangle gÃ©ant qui couvre l'Ã©cran
     vec2 positions[3] = vec2[3](
         vec2(-1.0, -1.0), // Bas-Gauche
         vec2( 3.0, -1.0), // Bas-Droite (loin)

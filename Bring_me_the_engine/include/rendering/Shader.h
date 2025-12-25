@@ -84,5 +84,5 @@ private:
      * @param source Code source du shader.
      * @return ID du shader compilé.
      */
-    GLuint compileShader(GLenum type, const std::string & source) const;
+    GLuint compileShader(GLenum type, const std::string & source, const std::string & pathfile) const;
 };

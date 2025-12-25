@@ -13,8 +13,8 @@ Shader::Shader(const std::string & vertexPath, const std::string & fragmentPath,
     std::string vertCode = loadFile(vertexPath);
     std::string fragCode = loadFile(fragmentPath);
 
-    GLuint vertexShader = compileShader(GL_VERTEX_SHADER, vertCode);
-    GLuint fragmentShader = compileShader(GL_FRAGMENT_SHADER, fragCode);
+    GLuint vertexShader = compileShader(GL_VERTEX_SHADER, vertCode, vertexPath);
+    GLuint fragmentShader = compileShader(GL_FRAGMENT_SHADER, fragCode, fragmentPath);
 
     ID = glCreateProgram();
     glAttachShader(ID, vertexShader);
@@ -26,7 +26,7 @@ Shader::Shader(const std::string & vertexPath, const std::string & fragmentPath,
         if (geomCode.empty()) {
             std::cerr << "Erreur: Shader geometry vide ou non trouvé: " << geometryPath << std::endl;
         } else {
-            geometryShader = compileShader(GL_GEOMETRY_SHADER, geomCode);
+            geometryShader = compileShader(GL_GEOMETRY_SHADER, geomCode, geometryPath);
             if (geometryShader) {
                 glAttachShader(ID, geometryShader);
             }
@@ -75,7 +75,7 @@ std::string Shader::loadFile(const std::string & path) const {
     return buffer.str();
 }
 
-GLuint Shader::compileShader(GLenum type, const std::string & source) const {
+GLuint Shader::compileShader(GLenum type, const std::string & source, const std::string & pathfile) const {
     GLuint shader = glCreateShader(type);
     const char * src = source.c_str();
     glShaderSource(shader, 1, &src, nullptr);
@@ -86,8 +86,10 @@ GLuint Shader::compileShader(GLenum type, const std::string & source) const {
     if (!success) {
         char infoLog[512];
         glGetShaderInfoLog(shader, 512, nullptr, infoLog);
-        std::cerr << "Shader compilation error:\n"
-                  << infoLog << "\n";
+        std::cerr << "Shader compilation error on this one " << pathfile << ":\n"
+                  << infoLog << "\n"
+                  <<"Here's the file:\n"
+                  << source << "\n";
     }
     return shader;
 }

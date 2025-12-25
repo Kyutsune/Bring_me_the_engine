@@ -3,7 +3,7 @@
 out vec4 FragColor;
 in vec2 TexCoord;
 
-// --- G-Buffer Inputs ---
+// --- Les buffers qui dÃ©finissent le gbuffer ---
 uniform sampler2D gDepth;
 uniform sampler2D gAlbedo;
 uniform sampler2D gNormal;
@@ -14,7 +14,7 @@ uniform sampler2D gSpecular;
 uniform mat4 inverseProjection;
 uniform mat4 inverseView;
 
-// --- Lumières & Params (Identiques au Forward) ---
+// --- Informations concernant les lumiÃ¨res ---
 #define MAX_LIGHTS 8
 #define MAX_POINT_LIGHTS 8
 
@@ -32,7 +32,7 @@ struct Light {
 uniform int numLights;
 uniform Light lights[MAX_LIGHTS];
 
-uniform vec3 ambientColor; // Pas utilisé directement dans ton calcAmbient mais présent
+uniform vec3 ambientColor;
 uniform float ambientStrength;
 uniform vec3 diffuseColor;
 uniform float diffuseIntensity;
@@ -52,7 +52,7 @@ uniform int fogType;
 // --- Shadows ---
 uniform bool useDirectionalShadow;
 uniform sampler2D shadowMap;
-uniform mat4 lightSpaceMatrix; // Nécessaire pour recalculer FragPosLightSpace
+uniform mat4 lightSpaceMatrix; // NÃ©cessaire pour calculer FragPosLightSpace
 uniform vec3 dirLightDirection;
 
 uniform bool usePointShadow;
@@ -62,7 +62,7 @@ uniform vec3 pointLightPositions[MAX_POINT_LIGHTS];
 uniform float pointLightFarPlanes[MAX_POINT_LIGHTS];
 uniform float pointLightIntensities[MAX_POINT_LIGHTS];
 
-// Reconstruit la position Monde à partir du Depth Buffer
+// Reconstruit la position Monde Ã  partir du Depth Buffer
 vec3 WorldPosFromDepth(vec2 uv, float depth) {
     vec4 clipPos = vec4(uv * 2.0 - 1.0, depth * 2.0 - 1.0, 1.0);
     
@@ -73,7 +73,6 @@ vec3 WorldPosFromDepth(vec2 uv, float depth) {
     return worldPos.xyz;
 }
 
-// Ta logique de Fog
 float getFogFactor(float dist) {
     if (fogType == 1) return clamp((fogEnd - dist) / (fogEnd - fogStart), 0.0, 1.0);
     else if (fogType == 2) return exp(-fogDensity * dist);
@@ -81,19 +80,18 @@ float getFogFactor(float dist) {
     else return 1.0;
 }
 
-// Ta logique d'Ambiante
 vec3 calcAmbient(vec3 norm) {
     vec3 upColor = vec3(1.0, 1.0, 1.0);
     vec3 downColor = vec3(0.3, 0.3, 0.3);
     float factor = norm.y * 0.5 + 0.5;
-    return mix(downColor, upColor, factor) * ambientStrength;
+    return mix(downColor, upColor, factor) * ambientColor * ambientStrength;
 }
 
-// Ombres directionnelles (adapté pour calculer projCoords ici)
+// Ombres directionnelles
 float calculateDirShadow(vec3 worldPos, vec3 normal) {
     if (!useDirectionalShadow) return 1.0;
 
-    // On projette la position monde dans l'espace lumière ici
+    // On projette la position monde dans l'espace lumiÃ¨re ici
     vec4 fragPosLightSpace = lightSpaceMatrix * vec4(worldPos, 1.0);
     
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
@@ -156,7 +154,7 @@ float calculatePointShadow(vec3 fragPos, vec3 normal, int lightIndex) {
     return mix(0.2, 1.0, 1.0 - clamp(shadow, 0.0, 1.0)) * pointLightIntensities[lightIndex];
 }
 
-// Calcul d'éclairage unique
+// Calcul d'Ã©clairage unique
 vec3 calcLight(Light light, vec3 norm, vec3 viewDir, vec3 fragPos, float shadowFactor, vec3 specMapVal) {
     vec3 lightDir;
     float attenuation = 1.0;
@@ -192,7 +190,7 @@ vec3 calcLight(Light light, vec3 norm, vec3 viewDir, vec3 fragPos, float shadowF
 
 void main()
 {
-    // 1. Récupération des données du G-Buffer
+    // RÃ©cupÃ©ration des donnÃ©es du G-Buffer
     float depth = texture(gDepth, TexCoord).r;
 
 
@@ -203,19 +201,19 @@ void main()
     vec3 FragPos = WorldPosFromDepth(TexCoord, depth);
 
     vec3 Albedo = texture(gAlbedo, TexCoord).rgb;
-    // Décodage de la normale : [0,1] -> [-1,1]
+    // DÃ©codage de la normale : [0,1] -> [-1,1]
     vec3 Normal = normalize(texture(gNormal, TexCoord).rgb);
     vec3 SpecularData = texture(gSpecular, TexCoord).rgb;
 
     // Conversion SpecularData en float pour le lighting 
     float specMapVal = dot(SpecularData, vec3(0.299, 0.587, 0.114));
 
-    // 2. Calculs préliminaires
+    //  Calculs prÃ©liminaires
     vec3 viewDir = normalize(viewPos - FragPos);
     float distance_to_obj = length(viewPos - FragPos);
     float fogFactor = getFogFactor(distance_to_obj);
 
-    // 3. Calcul de l'éclairage
+    // Calcul de l'Ã©clairage
     vec3 result = calcAmbient(Normal);
     float shadowFactor = calculateDirShadow(FragPos, Normal);
 

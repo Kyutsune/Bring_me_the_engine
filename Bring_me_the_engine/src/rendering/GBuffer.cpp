@@ -153,11 +153,12 @@ int GBuffer::render(const Scene& scene, const Camera& camera, Shader & gBufferSh
 }
 
 void GBuffer::blitDepthToDefaultBuffer() {
+	// On copie la depth calculée dans le gbuffer vers l'écran
+    // Ceci permettra de dessiner les autres objets seulement s'ils sont devant la géométrie déjà dessinée
     glBindFramebuffer(GL_READ_FRAMEBUFFER, m_fbo);
 
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
-	// On copie la depht calcul�e vers l'�cran
     glBlitFramebuffer(
         0, 0, m_width, m_height,
         0, 0, m_width, m_height,
