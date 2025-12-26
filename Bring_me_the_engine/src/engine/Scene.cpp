@@ -22,7 +22,7 @@ Scene::Scene() : m_view(Mat4::identity()), m_projection(Mat4::identity()) {
 }
 Scene::Scene(const int & sceneIndex) : m_view(Mat4::identity()), m_projection(Mat4::identity()) {
     m_camera = Camera(
-        Vec3(-5.7, 0., -1.), // position à l'initialisation
+        Vec3(-7, 3, 1), // position à l'initialisation
         Vec3(0., 0., -3.),   // le point ciblé
         Vec3(0, 1, 0),       // up
         45.0f,               // FOV

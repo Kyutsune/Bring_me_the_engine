@@ -13,7 +13,7 @@ Scene & getScene() {
     return *g_scene;
 }
 
-float g_sensibility_depl = 0.01f;
+float g_sensibility_depl = 0.20f;
 float g_sensibility_rot = 0.01f;
 
 size_t g_windowWidth = 1600;

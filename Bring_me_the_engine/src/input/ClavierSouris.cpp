@@ -147,16 +147,19 @@ namespace ClavierSouris {
         entities.insert(entities.end(), lightentities.begin(), lightentities.end());
 
         IntersectionInfo retour_info;
-        retour_info.t = std::numeric_limits<float>::max();
 
         // Ici on va récupérer l'entité la plus proche de la caméra dans la direction du clic
         for (const auto & entity : entities) {
             if (!entity->isVisible())
                 continue;
 
-            IntersectUtils::intersectEntity(ray, *entity, retour_info);
+            IntersectUtils::intersectEntity(ray, *entity, retour_info, 10000.0f);
         }
+
         if (retour_info.hit && retour_info.entity) {
+
+            std::cout<<"Clic gauche sur l'entité: " << retour_info.entity->getName()
+                     << " à la position " << retour_info.position << std::endl;
             // Si sol cliqué, alors on va vouloir créer une entité si possible en l'endroit du clic
             // TODO: Il faudrait un moyen plus propre de savoir si on a cliqué sur le sol ou pas
             // Ici on suppose que le sol est l'entité nommée "Sol_beton" ce qui n'est pas générique

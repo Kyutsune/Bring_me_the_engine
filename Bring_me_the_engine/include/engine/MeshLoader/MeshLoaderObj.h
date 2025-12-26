@@ -13,7 +13,7 @@ namespace MeshLoaderOBJ {
     static std::shared_ptr<Mesh> loadFromFile(const std::string& filepath) {
         std::ifstream file(filepath);
         if (!file.is_open()) {
-            std::cerr << "[OBJ Loader] Impossible d'ouvrir " << filepath << std::endl;
+            std::cerr << "[OBJ Loader ERROR] Impossible d'ouvrir " << filepath << std::endl;
             return std::make_shared<Mesh>(std::vector<Vertex>{}, std::vector<unsigned int>{});
         }
 
@@ -93,7 +93,8 @@ namespace MeshLoaderOBJ {
         }
 
         std::cout << "[OBJ Loader] " << filepath << " : " << positions.size() << " pos, "
-            << texCoords.size() << " UVs." << std::endl;
+            << texCoords.size() << " UVs, " << normals.size() << " normals, "
+            << vertices.size() << " vertices, " << indices.size() << " indices." << std::endl;
 
         if (vertices.empty()) return std::make_shared<Mesh>(vertices, indices);
 

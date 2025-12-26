@@ -104,6 +104,7 @@ int GBuffer::render(const Scene& scene, const Camera& camera, Shader & gBufferSh
     int drawnTriangles = 0;
     for (const std::shared_ptr<Entity>& entity : entities) {
         if (frustum.isBoxInFrustum(entity->getTransformedBoundingBox())) {
+            entity->setVisible(true);
             Transform model = entity->getTransform();
 
             Transform mvp = model * view * proj;
@@ -144,6 +145,9 @@ int GBuffer::render(const Scene& scene, const Camera& camera, Shader & gBufferSh
             }
 
             entity->getMesh()->draw();
+        }
+        else{
+            entity->setVisible(false);
         }
     }
 
