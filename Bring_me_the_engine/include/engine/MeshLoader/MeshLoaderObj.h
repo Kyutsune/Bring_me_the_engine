@@ -5,11 +5,12 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
+#include <array>
 #include "engine/Mesh.h"
 #include "math/Tang_Bitang.h"
 
 namespace MeshLoaderOBJ {
-    static std::shared_ptr<Mesh> loadFromFile(const std::string & filepath) {
+    static std::shared_ptr<Mesh> loadFromFile(const std::string& filepath) {
         std::ifstream file(filepath);
         if (!file.is_open()) {
             std::cerr << "[OBJ Loader] Impossible d'ouvrir " << filepath << std::endl;
@@ -24,6 +25,11 @@ namespace MeshLoaderOBJ {
 
         std::string line;
         while (std::getline(file, line)) {
+            if (line.empty() || line[0] == '#') continue;
+
+            // Nettoyage des fins de ligne Windows
+            if (!line.empty() && line.back() == '\r') line.pop_back();
+
             std::stringstream ss(line);
             std::string prefix;
             ss >> prefix;
@@ -32,46 +38,66 @@ namespace MeshLoaderOBJ {
                 Vec3 pos;
                 ss >> pos.x >> pos.y >> pos.z;
                 positions.push_back(pos);
-            } else if (prefix == "vt") {
+            }
+            else if (prefix == "vt") {
                 Vec2 uv;
                 ss >> uv.x >> uv.y;
-                uv.y = 1.0f - uv.y; // Inverser l'axe Y pour OpenGL
                 texCoords.push_back(uv);
-            } else if (prefix == "vn") {
+            }
+            else if (prefix == "vn") {
                 Vec3 n;
                 ss >> n.x >> n.y >> n.z;
                 normals.push_back(n);
-            } else if (prefix == "f") {
+            }
+            else if (prefix == "f") {
                 std::vector<std::string> faceVertices;
-                std::string vertexStr;
-                while (ss >> vertexStr)
-                    faceVertices.push_back(vertexStr);
+                std::string vStr;
+                while (ss >> vStr) faceVertices.push_back(vStr);
 
+                // Triangulation des faces (gère les quads de house.obj)
                 for (size_t i = 1; i + 1 < faceVertices.size(); ++i) {
-                    std::array<std::string, 3> tri = {faceVertices[0], faceVertices[i], faceVertices[i + 1]};
-                    for (auto & vStr : tri) {
-                        std::replace(vStr.begin(), vStr.end(), '/', ' ');
-                        std::stringstream vs(vStr);
+                    std::array<std::string, 3> tri = { faceVertices[0], faceVertices[i], faceVertices[i + 1] };
+                    for (auto& s : tri) {
+                        // Remplacement propre des // pour ne pas décaler les indices
+                        size_t pos_slash;
+                        while ((pos_slash = s.find("//")) != std::string::npos) s.replace(pos_slash, 2, "/0/");
+                        std::replace(s.begin(), s.end(), '/', ' ');
+
+                        std::stringstream vs(s);
                         int vIdx = 0, tIdx = 0, nIdx = 0;
                         vs >> vIdx >> tIdx >> nIdx;
 
-                        Vertex vertex;
-                        vertex.m_position = positions[vIdx - 1];
-                        vertex.m_texCoords = (tIdx > 0 && tIdx <= (int)texCoords.size()) ? texCoords[tIdx - 1] : Vec2(0, 0);
-                        vertex.m_normal = (nIdx > 0 && nIdx <= (int)normals.size()) ? normals[nIdx - 1] : Vec3(0, 0, 0);
-                        vertex.m_color = Vec3(1.0f);
-                        vertices.push_back(vertex);
-                        indices.push_back(vertices.size() - 1);
+                        // Gestion des indices relatifs (négatifs) ou absolus (positifs)
+                        int finalV = (vIdx > 0) ? vIdx - 1 : (vIdx < 0 ? (int)positions.size() + vIdx : -1);
+                        int finalT = (tIdx > 0) ? tIdx - 1 : (tIdx < 0 ? (int)texCoords.size() + tIdx : -1);
+                        int finalN = (nIdx > 0) ? nIdx - 1 : (nIdx < 0 ? (int)normals.size() + nIdx : -1);
+
+                        if (finalV >= 0 && finalV < (int)positions.size()) {
+                            Vertex v;
+                            v.m_position = positions[finalV];
+
+                            // Si finalT est -1 ou hors limites, on met (0,0)
+                            v.m_texCoords = (finalT >= 0 && finalT < (int)texCoords.size())
+                                ? texCoords[finalT] : Vec2(0.0f, 0.0f);
+
+                            v.m_normal = (finalN >= 0 && finalN < (int)normals.size())
+                                ? normals[finalN] : Vec3(0, 0, 0);
+
+                            v.m_color = Vec3(1.0f);
+                            vertices.push_back(v);
+                            indices.push_back((unsigned int)vertices.size() - 1);
+                        }
                     }
                 }
             }
         }
 
-        computeTangentsAndBitangents(vertices, indices);
-        std::cout << "[OBJ Loader] " << filepath << " chargé avec "
-                  << vertices.size() << " vertices et "
-                  << indices.size() / 3 << " triangles." << std::endl;
+        std::cout << "[OBJ Loader] " << filepath << " : " << positions.size() << " pos, "
+            << texCoords.size() << " UVs." << std::endl;
 
+        if (vertices.empty()) return std::make_shared<Mesh>(vertices, indices);
+
+        computeTangentsAndBitangents(vertices, indices);
         return std::make_shared<Mesh>(vertices, indices);
     }
 };

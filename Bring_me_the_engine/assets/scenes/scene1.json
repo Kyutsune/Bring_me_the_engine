@@ -119,7 +119,7 @@
       }
     },
     {
-      "name": "Bigguy_obj",
+      "name": "Bigguy",
       "mesh": "assets/obj/bigguy.obj",
       "material": {},
       "transform": {
@@ -132,6 +132,33 @@
           1,
           1,
           1
+        ],
+        "rotate": [
+          0,
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "name": "House",
+      "mesh": "assets/house/house.obj",
+      "material": {
+        "diffuse": "assets/house/rungholt-RGBA.png",
+        "filter": "nearest",
+        "wrap": "clamp",
+        "flip": true
+      },
+      "transform": {
+        "translate": [
+          10.28,
+          -0.93,
+          0
+        ],
+        "scale": [
+          0.1,
+          0.1,
+          0.1
         ],
         "rotate": [
           0,

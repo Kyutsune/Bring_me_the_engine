@@ -265,6 +265,8 @@ void main() {
 
     if (useTexture) {
         // Cas texture diffuse
+        vec4 texurer = texture(texture_diffuse, TexCoord);
+        if(texurer.a < 0.1) discard;
         surfaceColor = texture(texture_diffuse, TexCoord).rgb;
     } else {
         // Cas sans texture

@@ -2,23 +2,24 @@
 #include "../external/stb/stb_image.h"
 
 #include "rendering/GestionTextures/Texture.h"
-#include <glad/glad.h>
 #include <iostream>
 
-Texture::Texture(const std::string & path, bool flip) {
+Texture::Texture(const std::string& path, GLint wrapMode, GLint filterMode, bool flip) {
     glGenTextures(1, &m_textureID);
     glBindTexture(GL_TEXTURE_2D, m_textureID);
 
-    // Wrapping
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    // Filtering
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapMode);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapMode);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filterMode);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, (filterMode == GL_NEAREST || filterMode == GL_NEAREST_MIPMAP_NEAREST) ? GL_NEAREST : GL_LINEAR);
 
     // Charger l'image
     if (flip)
         stbi_set_flip_vertically_on_load(true);
+    else
+        stbi_set_flip_vertically_on_load(false);
+
     unsigned char * data = stbi_load(path.c_str(), &m_width, &m_height, &m_nrChannels, 0);
 
     if (data) {

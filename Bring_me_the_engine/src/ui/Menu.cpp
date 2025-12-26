@@ -55,7 +55,10 @@ void Menu::render() {
     if (!m_menu_principal)
         return;
 
+    static ImVec2 nextPos = ImVec2(10, 10); // Position de départ
+
     /// Partie du menu qui gère tout ce qui touche à la scène déjà existante, on pourrait dire le menu "principal"
+    ImGui::SetNextWindowPos(nextPos, ImGuiCond_FirstUseEver);
     setupMenuDisplay();
     ImGui::Begin("Bring me the menu", &m_menu_principal);
 
@@ -69,19 +72,24 @@ void Menu::render() {
     Sections::fogSection(scene);
     Sections::sensitivitySection();
     Sections::quitButton(window);
+    nextPos.x += ImGui::GetWindowHeight() + 220;
+    ImGui::End();
 
     // Deuxième partie du menu qui conditionnera elle tout ce qui touche à l'édition de la scène,
     // dont le fait de rajouter des entités, textures etc...
+    ImGui::SetNextWindowPos(nextPos, ImGuiCond_FirstUseEver);
     setupMenuDisplay();
     ImGui::Begin("Editeur de scène", &m_menu_principal);
     Sections::changeEntityCreatedSection(scene);
+    nextPos.x = 10;
+    nextPos.y += ImGui::GetWindowHeight() + 200;
+    ImGui::End();
 
+
+    ImGui::SetNextWindowPos(nextPos, ImGuiCond_FirstUseEver);
     setupMenuDisplay();
     ImGui::Begin("Performances", &m_menu_principal);
     Sections::performanceSection();
-
-    ImGui::End();
-    ImGui::End();
     ImGui::End();
 }
 

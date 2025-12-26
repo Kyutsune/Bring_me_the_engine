@@ -143,7 +143,6 @@ int GBuffer::render(const Scene& scene, const Camera& camera, Shader & gBufferSh
                 gBufferShader.set("useSpecularMap", false);
             }
 
-
             entity->getMesh()->draw();
         }
     }

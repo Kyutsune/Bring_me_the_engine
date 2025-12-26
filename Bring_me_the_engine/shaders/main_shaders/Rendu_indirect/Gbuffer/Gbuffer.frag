@@ -34,14 +34,17 @@ vec3 getNormal() {
 
 void main()
 {
-    vec3 albedo = baseColor;
-    if(useTexture == 1)
-        albedo = texture(albedoMap, vUV).rgb;
-    else
-        albedo = baseColor;
-    gAlbedo = vec4(albedo, 1.0);
+    vec4 albedo = vec4(baseColor, 1.0);
+    if(useTexture == 1){
+        albedo = texture(albedoMap, vUV);
+        if(albedo.a < 0.1) {
+            discard;
+        }
+    }
+    gAlbedo = vec4(albedo);
 
-    gNormal = getNormal();
+    vec3 normal = getNormal();
+    gNormal = gl_FrontFacing ? normal : -normal;
 
 
 

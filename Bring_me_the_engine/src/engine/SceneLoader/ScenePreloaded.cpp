@@ -305,19 +305,42 @@ namespace scenePreloaded {
                     }
                 }
 
-                Mat4 transform = Mat4::Scale(scale) * Mat4::rotateXYZ(rotation) * Mat4::Translation(translation);
+                Mat4 transform = Mat4::rotateXYZ(rotation) * Mat4::Scale(scale) * Mat4::Translation(translation);
 
                 // Matériaux
                 std::shared_ptr<Material> material = nullptr;
                 if (e.contains("material")) {
-                    /// TODO: Faire en sorte que mes fichiers puissent charger des couleurs de base aussi
                     std::string diffuse = e["material"].value("diffuse", "");
                     std::string normal = e["material"].value("normal", "");
                     std::string specular = e["material"].value("specular", "");
 
-                    std::shared_ptr<Texture> d = diffuse.empty() ? nullptr : TextureManager::load(PathResolver::getResourcePath(diffuse));
-                    std::shared_ptr<Texture> n = normal.empty() ? nullptr : TextureManager::load(PathResolver::getResourcePath(normal));
-                    std::shared_ptr<Texture> s = specular.empty() ? nullptr : TextureManager::load(PathResolver::getResourcePath(specular));
+                    std::string wrapStr = e["material"].value("wrap", "repeat");
+                    GLint wrapMode = (wrapStr == "clamp") ? GL_CLAMP_TO_EDGE : GL_REPEAT;
+
+                    std::string filterStr = e["material"].value("filter", "linear");
+                    GLint filterMode;
+                    if (filterStr == "nearest") {
+                        filterMode = GL_NEAREST; // Pour les Atlas (pas de mipmaps, pixel net)
+                    }
+                    else if (filterStr == "linear") {
+                        filterMode = GL_LINEAR_MIPMAP_LINEAR; // Pour le sol (lisse au loin)
+                    }
+                    else {
+                        filterMode = GL_NEAREST_MIPMAP_NEAREST; // Option intermédiaire si besoin
+                    }
+
+                    bool flip = e["material"].value("flip", true);
+
+                    // Passage des réglages au TextureManager
+                    std::shared_ptr<Texture> d = diffuse.empty() ? nullptr :
+                        TextureManager::load(PathResolver::getResourcePath(diffuse), wrapMode, filterMode, flip);
+
+                    // Pour les normales et specular, on utilise souvent LINEAR et REPEAT par défaut
+                    std::shared_ptr<Texture> n = normal.empty() ? nullptr :
+                        TextureManager::load(PathResolver::getResourcePath(normal), GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR, false);
+
+                    std::shared_ptr<Texture> s = specular.empty() ? nullptr :
+                        TextureManager::load(PathResolver::getResourcePath(specular), GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR, false);
 
                     material = std::make_shared<Material>(d, n, s);
                 }

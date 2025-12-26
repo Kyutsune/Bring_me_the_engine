@@ -1,9 +1,10 @@
 #pragma once
 #include <string>
+#include <glad/glad.h>
 
 class Texture {
 public:
-    Texture(const std::string& path, bool flip = true);
+    Texture(const std::string& path, GLint wrapMode = GL_REPEAT, GLint filterMode = GL_NEAREST_MIPMAP_NEAREST, bool flip = true);
     ~Texture();
 
     void bind(unsigned int unit = 0) const;

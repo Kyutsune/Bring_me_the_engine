@@ -36,8 +36,8 @@ inline T createFloor(float size = 10.0f, float height = 0.0f, const Color & colo
     };
 
     std::vector<unsigned int> indices = {
-        0, 1, 2,
-        2, 3, 0
+        0, 2, 1,
+        2, 0, 3
     };
 
     computeTangentsAndBitangents(vertices, indices);
