@@ -86,24 +86,66 @@ namespace Sections {
     }
 
     void lightSection(Scene * scene) {
-        if (ImGui::CollapsingHeader("Lumières")) {
+        if (g_forceOpenLightHeader) {
+            ImGui::SetNextItemOpen(true, ImGuiCond_Always);
+        }
 
+        if (ImGui::CollapsingHeader("Lumières")) {
+            // Identification de la lumière actuellement sélectionnée
+            std::string expandedName = "";
+            for (auto const & [name, expanded] : g_lightExpanded) {
+                if (expanded) {
+                    expandedName = name;
+                    break;
+                }
+            }
+
+            Light * dirLightPtr = scene->getLightingManager().getFirstDirectional();
+            bool isDirExpanded = false;
+
+            // On vérifie si l'entité sélectionnée correspond à la directionnelle
+            for (const auto & entity : scene->getLightEntitiesRef()) {
+                if (entity->getName() == expandedName) {
+                    if ((entity->getPosition() - dirLightPtr->getPosition()).length() < 0.001f) {
+                        isDirExpanded = true;
+                    }
+                    break;
+                }
+            }
+
+            // Section Directionnelle
+            if (g_forceOpenLightHeader && isDirExpanded)
+                ImGui::SetNextItemOpen(true, ImGuiCond_Always);
             if (ImGui::TreeNode("Lumière directionnelle")) {
-                directionnalLightSection(scene);
+                directionnalLightSection(scene, isDirExpanded ? expandedName : "");
                 ImGui::TreePop();
             }
 
+            // Section Ponctuelle
+            if (g_forceOpenLightHeader && !isDirExpanded && !expandedName.empty())
+                ImGui::SetNextItemOpen(true, ImGuiCond_Always);
             if (ImGui::TreeNode("Lumières ponctuelles")) {
-                ponctualLightSection(scene);
+                ponctualLightSection(scene, dirLightPtr);
                 ImGui::TreePop();
             }
         }
+
+        if (g_forceOpenLightHeader) {
+            g_forceOpenLightHeader = false;
+        }
     }
 
-    void directionnalLightSection(Scene * scene) {
+    void directionnalLightSection(Scene * scene, const std::string & name) {
         ImGui::SeparatorText("Paramètres de la lumière directionnelle");
         LightingManager & lightingManager = scene->getLightingManager();
         Light * light = lightingManager.getFirstDirectional();
+
+        if (!name.empty()) {
+            if (ImGui::Selectable(name.c_str(), g_lightExpanded[name])) {
+                g_lightExpanded.clear();
+                g_lightExpanded[name] = true;
+            }
+        }
 
         bool isActive = light->isActive();
         if (ImGui::Checkbox("Activer", &isActive)) {
@@ -113,54 +155,79 @@ namespace Sections {
         if (ImGui::SliderFloat("Intensité", &intensity, 0.0f, 400.0f, "%.0f%%", ImGuiSliderFlags_AlwaysClamp)) {
             light->setIntensity(intensity / 10.0f);
         }
-
-        // TODO: Rajouter le fait de pouvoir modifier la direction de la lumière directionnelle
+        // TODO: Modifier la direction
     }
 
-    void ponctualLightSection(Scene * scene) {
+    void ponctualLightSection(Scene * scene, Light * dirLightPtr) {
         ImGui::SeparatorText("Paramètres des lumières ponctuelles");
+
+        const std::vector<std::shared_ptr<Entity>> & lightEntities = scene->getLightEntitiesRef();
         std::vector<Light *> lights = scene->getLightingManager().getPonctualLightsRef();
-        size_t count_of_lights = 1;
 
-        for (Light * light : lights) {
+        int punctualIdx = 0;
+        for (const auto & entity : lightEntities) {
+            // On saute l'entité qui correspond à la lumière directionnelle
+            if ((entity->getPosition() - dirLightPtr->getPosition()).length() < 0.001f) {
+                continue;
+            }
+
+            if (punctualIdx >= (int)lights.size())
+                break;
+
+            Light * light = lights[punctualIdx];
+            std::string name = entity->getName();
             ImGui::PushID(light);
-            ImGui::SeparatorText(("Lumière " + std::to_string(count_of_lights++)).c_str());
 
-            bool isActive = light->isActive();
-            if (ImGui::Checkbox("Activer", &isActive)) {
-                light->setActive(isActive);
-            }
-            float intensity = light->getIntensity() * 10.f;
-            if (ImGui::SliderFloat("Intensité", &intensity, 0.0f, 200.0f, "%.0f%%", ImGuiSliderFlags_AlwaysClamp)) {
-                light->setIntensity(intensity / 10.f); // Reconverti en [0.0 – 10.0]
+            if (g_forceOpenLightHeader && g_lightExpanded[name]) {
+                ImGui::SetScrollHereY();
             }
 
-            ImGui::SeparatorText("Position de la lumière");
-            Vec3 position = light->getPosition();
-
-            if (ImGui::DragFloat3("Position", &position.x, 0.01f, -100.0f, 100.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp)) {
-                light->setPosition(position);
+            if (ImGui::Selectable(name.c_str(), g_lightExpanded[name])) {
+                g_lightExpanded.clear();
+                g_lightExpanded[name] = !g_lightExpanded[name];
             }
 
-            SectionsUtilitary::renderPositionEditor("Light" + std::to_string(count_of_lights), position, [&](const Vec3 & newPos) {
-                light->setPosition(newPos);
-            });
+            if (g_lightExpanded[name]) {
+                ImGui::Indent();
+                ImGui::SeparatorText(("Paramètres : " + name).c_str());
 
-            ImGui::SeparatorText("Couleur de la lumière");
-            Color & lightColor = light->getColor();
+                bool isActive = light->isActive();
+                if (ImGui::Checkbox("Activer", &isActive)) {
+                    light->setActive(isActive);
+                }
 
-            float colorTmp[3] = {
-                lightColor.r,
-                lightColor.g,
-                lightColor.b};
+                float intensity = light->getIntensity() * 10.f;
+                if (ImGui::SliderFloat("Intensité", &intensity, 0.0f, 200.0f, "%.0f%%", ImGuiSliderFlags_AlwaysClamp)) {
+                    light->setIntensity(intensity / 10.f);
+                }
 
-            if (ImGui::ColorEdit3("Couleur", colorTmp)) {
-                lightColor.r = colorTmp[0];
-                lightColor.g = colorTmp[1];
-                lightColor.b = colorTmp[2];
+                ImGui::SeparatorText("Position de la lumière");
+                Vec3 position = light->getPosition();
+                if (ImGui::DragFloat3("Position", &position.x, 0.01f, -100.0f, 100.0f, "%.2f", ImGuiSliderFlags_AlwaysClamp)) {
+                    light->setPosition(position);
+                    entity->setPosition(position);
+                }
+
+                SectionsUtilitary::renderPositionEditor(name, position, [&](const Vec3 & newPos) {
+                    light->setPosition(newPos);
+                    entity->setPosition(newPos);
+                });
+
+                ImGui::SeparatorText("Couleur de la lumière");
+                Color & lightColor = light->getColor();
+                float colorTmp[3] = {lightColor.r, lightColor.g, lightColor.b};
+                if (ImGui::ColorEdit3("Couleur", colorTmp)) {
+                    lightColor.r = colorTmp[0];
+                    lightColor.g = colorTmp[1];
+                    lightColor.b = colorTmp[2];
+                }
+
+                ImGui::Unindent();
+                ImGui::Separator();
             }
 
             ImGui::PopID();
+            punctualIdx++;
         }
     }
 

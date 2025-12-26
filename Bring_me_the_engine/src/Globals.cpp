@@ -26,7 +26,10 @@ float g_lightSize = 0.5f;
 Vec3 g_selectedColor = Color::rose();
 
 std::unordered_map<std::string, bool> g_entityExpanded;
-bool g_forceOpenObjectHeader = false; 
+bool g_forceOpenObjectHeader = false;
+
+std::unordered_map<std::string, bool> g_lightExpanded;
+bool g_forceOpenLightHeader = false;
 
 TypeEntityCreated g_typeEntityCreated = TypeEntityCreated::Cube;
 bool g_isCreatingEntity = true;
