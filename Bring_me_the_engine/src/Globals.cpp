@@ -35,3 +35,28 @@ TypeEntityCreated g_typeEntityCreated = TypeEntityCreated::Cube;
 bool g_isCreatingEntity = true;
 
 PerformanceStats g_perfStats = {};
+
+
+void resetPerformancesStatsOnMeshesDraw() {
+    g_perfStats.numberPointsRendered = 0;
+    g_perfStats.numberTrianglesRendered = 0;
+    g_perfStats.numberEntitiesDrawn = 0;
+}
+
+void updatePerformanceStatsOnAddedEntity(const Entity& entity) {
+    g_perfStats.totalNumberEntitiesInScene++;
+    g_perfStats.totalNumberPointsInScene += entity.getMesh()->getNumberOfVertices();
+    g_perfStats.totalNumberTrianglesInScene += entity.getMesh()->getNumberOfIndices() / 3;
+}
+
+void updatePerformanceStatsOnRemovedEntity(const Entity& entity) {
+    g_perfStats.totalNumberEntitiesInScene--;
+    g_perfStats.totalNumberPointsInScene -= entity.getMesh()->getNumberOfVertices();
+    g_perfStats.totalNumberTrianglesInScene -= entity.getMesh()->getNumberOfIndices() / 3;
+}
+
+void updatePerformanceStatsOnEntityDrawn(const Entity& entity) {
+    g_perfStats.numberPointsRendered += entity.getMesh()->getNumberOfVertices();
+    g_perfStats.numberTrianglesRendered += entity.getMesh()->getNumberOfIndices() / 3;
+    g_perfStats.numberEntitiesDrawn++;
+}

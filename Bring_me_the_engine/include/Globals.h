@@ -70,3 +70,8 @@ struct PerformanceStats {
     double totalNumberEntitiesInScene;
 };
 extern PerformanceStats g_perfStats; 
+
+extern void resetPerformancesStatsOnMeshesDraw();
+extern void updatePerformanceStatsOnAddedEntity(const Entity & entity);
+extern void updatePerformanceStatsOnRemovedEntity(const Entity& entity);
+extern void updatePerformanceStatsOnEntityDrawn(const Entity& entity);

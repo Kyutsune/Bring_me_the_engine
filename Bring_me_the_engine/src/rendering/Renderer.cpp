@@ -125,8 +125,7 @@ void Renderer::renderEntities(const Scene & scene, const Mat4 & view, const Mat4
         if (frustum.isBoxInFrustum(entity->getTransformedBoundingBox())) {   
             entity->drawForward(*m_entityShader, view, projection);
             entity->setVisible(true);
-            g_perfStats.numberPointsRendered += entity->getMesh()->getNumberOfVertices();
-            g_perfStats.numberTrianglesRendered += entity->getMesh()->getNumberOfIndices() / 3;
+            updatePerformanceStatsOnEntityDrawn(*entity);
         } else {
             entity->setVisible(false);
         }
@@ -143,8 +142,9 @@ void Renderer::renderLightEntities(const Scene & scene, const Mat4 & view, const
     const Frustum & frustum = scene.getFrustum();
 
     for (size_t i = 0; i < lightEntities.size(); ++i) {
-        if (lights[i].getType() != LightType::LIGHT_POINT && !frustum.isBoxInFrustum(lightEntities[i]->getTransformedBoundingBox()))
+        if (lights[i].getType() != LightType::LIGHT_POINT || !frustum.isBoxInFrustum(lightEntities[i]->getTransformedBoundingBox())) {
             continue;
+        }
 
         Vec3 lightPos = lights[i].getPosition();
         lightEntities[i]->getTransform().setTranslation(lightPos);
@@ -152,6 +152,8 @@ void Renderer::renderLightEntities(const Scene & scene, const Mat4 & view, const
         scene.getLightingManager().applyPosLights(*m_lightShader, lights[i].getColor());
         lightEntities[i]->drawForward(*m_lightShader, view, projection);
         lightEntities[i]->setVisible(true);
+
+        updatePerformanceStatsOnEntityDrawn(*lightEntities[i]);
     }
 }
 
@@ -167,9 +169,7 @@ void Renderer::renderFrame(const Scene & scene) {
     // Rendu principal
     m_sceneRenderTimer.start();
 
-    g_perfStats.numberPointsRendered = 0;
-    g_perfStats.numberTrianglesRendered = 0;
-	g_perfStats.numberEntitiesDrawn = 0;
+    resetPerformancesStatsOnMeshesDraw();
 
     if(m_renderType == RenderType::FORWARD)
         renderSceneForward(scene);
@@ -178,14 +178,17 @@ void Renderer::renderFrame(const Scene & scene) {
 
     m_sceneRenderTimer.stop();
 
+    //TODO: Retirer tout ça du cout et le rajouter dans Imgui dans la partie "Performances"
+	static bool debugPrinted = false;
+    if (debugPrinted) {
+        std::cout << "Points rendus: " << g_perfStats.numberPointsRendered
+            << " | Triangles rendus: " << g_perfStats.numberTrianglesRendered
+            << " | Entités rendus: " << g_perfStats.numberEntitiesDrawn << std::endl;
 
-    std::cout << "Points rendus: " << g_perfStats.numberPointsRendered
-        << " | Triangles rendus: " << g_perfStats.numberTrianglesRendered
-        << " | Entités rendus: " << g_perfStats.numberEntitiesDrawn << std::endl;
-
-    std::cout << " | Nombre d'entités dans la scène: " << scene.getEntities().size()
-        << " | Nombre de Points totaux dans la scène" << g_perfStats.totalNumberPointsInScene
-		<< " | Nombre de Triangles totaux dans la scène" << g_perfStats.totalNumberTrianglesInScene << std::endl;
+        std::cout << " | Nombre d'entités dans la scène: " << g_perfStats.totalNumberEntitiesInScene
+            << " | Nombre de Points totaux dans la scène" << g_perfStats.totalNumberPointsInScene
+            << " | Nombre de Triangles totaux dans la scène" << g_perfStats.totalNumberTrianglesInScene << std::endl;
+    }
 
     // Script pour les temps de rendu GPU et CPU
     // Début mesure CPU totale

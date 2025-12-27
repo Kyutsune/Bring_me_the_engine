@@ -143,9 +143,7 @@ int GBuffer::render(const Scene& scene, const Camera& camera, Shader & gBufferSh
 
             entity->getMesh()->draw();
 
-            g_perfStats.numberPointsRendered += entity->getMesh()->getNumberOfVertices();
-            g_perfStats.numberTrianglesRendered += entity->getMesh()->getNumberOfIndices() / 3;
-            g_perfStats.numberEntitiesDrawn++;
+			updatePerformanceStatsOnEntityDrawn(*entity);
 
             entity->setVisible(true);
         }

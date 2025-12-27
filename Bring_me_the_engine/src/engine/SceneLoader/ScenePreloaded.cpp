@@ -254,9 +254,12 @@ namespace scenePreloaded {
         std::shared_ptr<Mesh> lightMesh = createSphere<std::shared_ptr<Mesh>>(g_lightSize, 36, 18, Color::white());
         for (const Light & light : lightingManager.getLights()) {
             Mat4 lightTransform = Mat4::Scale(Vec3(0.1f, 0.1f, 0.1f)) * Mat4::Translation(light.getPosition());
-            std::shared_ptr<Entity> lightEntity = std::make_shared<Entity>(lightTransform, lightMesh);
+            std::shared_ptr<Entity> lightEntity = std::make_shared<Entity>(lightTransform, lightMesh, std::shared_ptr<Material>(nullptr), "Light_" + std::to_string(lightEntities.size()));
+			if (light.getType() == LightType::LIGHT_DIRECTIONAL) {
+                lightEntity->setName("Light_Directionnal" + std::to_string(lightEntities.size()));
+                updatePerformanceStatsOnRemovedEntity(*lightEntity);
+            }
             //TODO: Trouver un moyen plus malin de nommage, car lightEntities comprend aussi les directionnelles
-            lightEntity->setName("Light_" + std::to_string(lightEntities.size()));
             lightEntities.emplace_back(lightEntity);
         }
 
@@ -350,9 +353,6 @@ namespace scenePreloaded {
                 std::shared_ptr<Entity> entity = std::make_shared<Entity>(transform, mesh, material, name);
                 entity->getBoundingBox().setupBBoxBuffers();
                 entities.emplace_back(entity);
-				g_perfStats.totalNumberEntitiesInScene++;
-                g_perfStats.totalNumberPointsInScene += entity->getMesh()->getNumberOfVertices();
-                g_perfStats.totalNumberTrianglesInScene += entity->getMesh()->getNumberOfIndices() / 3;
             }
         }
     }
