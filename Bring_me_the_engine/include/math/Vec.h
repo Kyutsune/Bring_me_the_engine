@@ -151,6 +151,14 @@ struct Vec4 {
     Vec4 operator-(const Vec4 & o) const { return {x - o.x, y - o.y, z - o.z, w - o.w}; }
     Vec4 operator*(float s) const { return {x * s, y * s, z * s, w * s}; }
     Vec4 operator/(float s) const { return {x / s, y / s, z / s, w / s}; }
+    Vec4 & operator/=(float s) {
+        x /= s;
+        y /= s;
+        z /= s;
+        w /= s;
+        return *this;
+    }
+    
 
     const float * ptr() const { return &x; }
     float * ptr() { return &x; }

@@ -36,6 +36,10 @@ extern std::unordered_map<std::string, bool> g_entityExpanded;
 // Pour forcer l'ouverture de la section des objets dans le menu
 extern bool g_forceOpenObjectHeader;
 
+// Même chose mais pour les lumières
+extern std::unordered_map<std::string, bool> g_lightExpanded;
+extern bool g_forceOpenLightHeader;
+
 extern Vec3 g_selectedColor;
 
 /// Partie qui gérera le fait de séléctionner quel entité on veut afficher dans le menu

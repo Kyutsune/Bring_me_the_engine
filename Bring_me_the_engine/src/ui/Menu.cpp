@@ -55,7 +55,7 @@ void Menu::render() {
     if (!m_menu_principal)
         return;
 
-    static ImVec2 nextPos = ImVec2(10, 10); // Position de départ
+    static ImVec2 nextPos = ImVec2(10, 10);
 
     /// Partie du menu qui gère tout ce qui touche à la scène déjà existante, on pourrait dire le menu "principal"
     ImGui::SetNextWindowPos(nextPos, ImGuiCond_FirstUseEver);

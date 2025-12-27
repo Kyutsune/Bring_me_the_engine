@@ -27,7 +27,7 @@ namespace Sections {
      * Permet de modifier la direction, l'intensité et la couleur des lumières directionnelles.
      * @param scene Pointeur vers la scène active.
      */
-    void directionnalLightSection(Scene * scene);
+    void directionnalLightSection(Scene * scene, const std::string & name);
 
     /**
      * @brief Section pour les lumières ponctuelles.
@@ -35,7 +35,7 @@ namespace Sections {
      * Permet de modifier la position, l'intensité et la couleur des lumières ponctuelles.
      * @param scene Pointeur vers la scène active.
      */
-    void ponctualLightSection(Scene * scene);
+    void ponctualLightSection(Scene * scene, Light * dirLightPtr);
 
     /**
      * @brief Section permettant de modifier la sensibilité des contrôles.

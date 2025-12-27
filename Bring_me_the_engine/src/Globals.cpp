@@ -13,7 +13,7 @@ Scene & getScene() {
     return *g_scene;
 }
 
-float g_sensibility_depl = 0.01f;
+float g_sensibility_depl = 0.20f;
 float g_sensibility_rot = 0.01f;
 
 size_t g_windowWidth = 1600;
@@ -26,7 +26,10 @@ float g_lightSize = 0.5f;
 Vec3 g_selectedColor = Color::rose();
 
 std::unordered_map<std::string, bool> g_entityExpanded;
-bool g_forceOpenObjectHeader = false; 
+bool g_forceOpenObjectHeader = false;
+
+std::unordered_map<std::string, bool> g_lightExpanded;
+bool g_forceOpenLightHeader = false;
 
 TypeEntityCreated g_typeEntityCreated = TypeEntityCreated::Cube;
 bool g_isCreatingEntity = true;

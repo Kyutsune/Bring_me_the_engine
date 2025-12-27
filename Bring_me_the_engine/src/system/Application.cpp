@@ -70,7 +70,7 @@ bool Application::initGLFW() {
 }
 
 bool Application::initWindow() {
-    m_window = glfwCreateWindow(1600, 800, "Bring Me The Engine", nullptr, nullptr);
+    m_window = glfwCreateWindow(g_windowWidth, g_windowHeight, "Bring Me The Engine", nullptr, nullptr);
     if (!m_window) {
         const char * desc;
         int code = glfwGetError(&desc);
