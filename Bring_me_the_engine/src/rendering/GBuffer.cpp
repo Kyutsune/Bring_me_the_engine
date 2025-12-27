@@ -100,10 +100,12 @@ int GBuffer::render(const Scene& scene, const Camera& camera, Shader & gBufferSh
     const std::vector<std::shared_ptr<Entity>>& entities = scene.getEntities();
     const Frustum& frustum = scene.getFrustum();
 
-
-    int drawnTriangles = 0;
     for (const std::shared_ptr<Entity>& entity : entities) {
         if (frustum.isBoxInFrustum(entity->getTransformedBoundingBox())) {
+			g_perfStats.numberPointsRendered += entity->getMesh()->getNumberOfVertices();
+			g_perfStats.numberTrianglesRendered += entity->getMesh()->getNumberOfIndices() / 3;
+            g_perfStats.numberEntitiesDrawn++;
+
             Transform model = entity->getTransform();
 
             Transform mvp = model * view * proj;

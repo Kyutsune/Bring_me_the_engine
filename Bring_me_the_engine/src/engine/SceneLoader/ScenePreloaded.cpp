@@ -350,6 +350,9 @@ namespace scenePreloaded {
                 std::shared_ptr<Entity> entity = std::make_shared<Entity>(transform, mesh, material, name);
                 entity->getBoundingBox().setupBBoxBuffers();
                 entities.emplace_back(entity);
+				g_perfStats.totalNumberEntitiesInScene++;
+                g_perfStats.totalNumberPointsInScene += entity->getMesh()->getNumberOfVertices();
+                g_perfStats.totalNumberTrianglesInScene += entity->getMesh()->getNumberOfIndices() / 3;
             }
         }
     }

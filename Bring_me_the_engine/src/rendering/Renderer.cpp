@@ -125,6 +125,8 @@ void Renderer::renderEntities(const Scene & scene, const Mat4 & view, const Mat4
         if (frustum.isBoxInFrustum(entity->getTransformedBoundingBox())) {   
             entity->drawForward(*m_entityShader, view, projection);
             entity->setVisible(true);
+            g_perfStats.numberPointsRendered += entity->getMesh()->getNumberOfVertices();
+            g_perfStats.numberTrianglesRendered += entity->getMesh()->getNumberOfIndices() / 3;
         } else {
             entity->setVisible(false);
         }
@@ -165,6 +167,10 @@ void Renderer::renderFrame(const Scene & scene) {
     // Rendu principal
     m_sceneRenderTimer.start();
 
+    g_perfStats.numberPointsRendered = 0;
+    g_perfStats.numberTrianglesRendered = 0;
+	g_perfStats.numberEntitiesDrawn = 0;
+
     if(m_renderType == RenderType::FORWARD)
         renderSceneForward(scene);
 	else if (m_renderType == RenderType::DEFERRED)
@@ -172,8 +178,14 @@ void Renderer::renderFrame(const Scene & scene) {
 
     m_sceneRenderTimer.stop();
 
-    // Rendu Gbuffer (pour l'instant que du test, par la suite tout le rendu sera en rendu différé)
 
+    std::cout << "Points rendus: " << g_perfStats.numberPointsRendered
+        << " | Triangles rendus: " << g_perfStats.numberTrianglesRendered
+        << " | Entités rendus: " << g_perfStats.numberEntitiesDrawn << std::endl;
+
+    std::cout << " | Nombre d'entités dans la scène: " << scene.getEntities().size()
+        << " | Nombre de Points totaux dans la scène" << g_perfStats.totalNumberPointsInScene
+		<< " | Nombre de Triangles totaux dans la scène" << g_perfStats.totalNumberTrianglesInScene << std::endl;
 
     // Script pour les temps de rendu GPU et CPU
     // Début mesure CPU totale

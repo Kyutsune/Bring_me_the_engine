@@ -49,6 +49,9 @@ public:
     /// Retourne une référence aux indices
     inline const std::vector<unsigned int> & getIndices() const { return m_indices; }
 
+	inline const int getNumberOfVertices() const { return static_cast<int>(m_vertices.size()); }
+	inline const int getNumberOfIndices() const { return static_cast<int>(m_indexCount); }
+
 private:
     /// Vertex Array Object OpenGL
     GLuint m_VAO;

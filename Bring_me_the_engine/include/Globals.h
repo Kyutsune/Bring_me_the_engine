@@ -58,5 +58,11 @@ struct PerformanceStats {
     double cpuFps;
     double finalFps;
     double avgFinalFps;
+    double numberPointsRendered;
+	double numberTrianglesRendered;
+    double numberEntitiesDrawn;
+    double totalNumberPointsInScene;
+	double totalNumberTrianglesInScene;
+    double totalNumberEntitiesInScene;
 };
 extern PerformanceStats g_perfStats; 
