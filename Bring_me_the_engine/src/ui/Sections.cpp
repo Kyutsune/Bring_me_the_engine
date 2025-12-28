@@ -1,8 +1,10 @@
 #include "ui/Sections.h"
-#include "Globals.h"
-#include "engine/Scene.h"
-#include "imgui.h"
 #include "ui/SectionsUtilitary.h"
+#include "engine/Scene.h"
+#include "system/UtilsFile.h"
+#include "Globals.h"
+
+#include "imgui.h"
 #include <unordered_map>
 
 namespace Sections {
@@ -10,18 +12,32 @@ namespace Sections {
     void sensitivitySection() {
         if (ImGui::CollapsingHeader("Sensibilité")) {
             ImGui::SeparatorText("Sensibilité de la souris");
-            ImGui::SliderFloat("Sensibilité rotation##SliderRot", &g_sensibility_rot, 0.01f, 0.5f, "%.2f", ImGuiSliderFlags_AlwaysClamp);
-            ImGui::InputFloat("Sensibilité rotation##InputRot", &g_sensibility_rot, 0.01f, 0.5f, "%.2f");
+            if (ImGui::SliderFloat("Sensibilité rotation##SliderRot", &g_sensibility_rot, 0.001f, 1.f, "%.3f", ImGuiSliderFlags_AlwaysClamp)){
+                UtilsFile::saveSettingsSensRot(g_settingsFilePath);
+            }
+            if (ImGui::InputFloat("Sensibilité rotation##InputRot", &g_sensibility_rot, 0.001f, 1.f, "%.3f")) {
+                UtilsFile::saveSettingsSensRot(g_settingsFilePath);
+            }
+
+
             ImGui::SeparatorText("Sensibilité du clavier");
-            ImGui::SliderFloat("Sensibilité déplacement##Sliderdepl", &g_sensibility_depl, 0.1f, 1.f, "%.2f", ImGuiSliderFlags_AlwaysClamp);
-            ImGui::InputFloat("Sensibilité déplacement##Inputdepl", &g_sensibility_depl, 0.1f, 1.f, "%.2f");
+            if (ImGui::SliderFloat("Sensibilité déplacement##Sliderdepl", &g_sensibility_depl, 0.01f, 1.f, "%.2f", ImGuiSliderFlags_AlwaysClamp)) {
+                UtilsFile::saveSettingsSensRot(g_settingsFilePath);
+            }
+            if (ImGui::InputFloat("Sensibilité déplacement##Inputdepl", &g_sensibility_depl, 0.01f, 1.f, "%.2f")) {
+                UtilsFile::saveSettingsSensRot(g_settingsFilePath);
+            }
             ImGui::Separator();
+
+
             if (ImGui::Button("Réinitialisation rotation")) {
                 g_sensibility_rot = 0.01f;
+				UtilsFile::saveSettingsSensRot(g_settingsFilePath);
             }
             ImGui::SameLine();
             if (ImGui::Button("Réinitialisation déplacement")) {
                 g_sensibility_depl = 0.10f;
+				UtilsFile::saveSettingsSensRot(g_settingsFilePath);
             }
         }
     }

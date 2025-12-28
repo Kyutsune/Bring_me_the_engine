@@ -48,6 +48,11 @@ private:
     void setupCallbacks();
 
     /**
+         * @brief Initialise les variables globales de l'application.
+	*/
+    void setupGlobals();
+
+    /**
      * @brief Initialise la scène 3D et les entités.
      */
     void setupScene();

@@ -1,4 +1,5 @@
 #include "Globals.h"
+#include "system/UtilsFile.h"
 
 std::unique_ptr<Scene> g_scenePtr = nullptr;
 Scene * g_scene = nullptr;
@@ -13,8 +14,11 @@ Scene & getScene() {
     return *g_scene;
 }
 
-float g_sensibility_depl = 0.20f;
-float g_sensibility_rot = 0.01f;
+
+// Ses trois variables sont réellement initialisées via le render dans Application.cpp
+std::string g_settingsFilePath;
+float g_sensibility_depl;
+float g_sensibility_rot;
 
 size_t g_windowWidth = 1600;
 size_t g_windowHeight = 800;

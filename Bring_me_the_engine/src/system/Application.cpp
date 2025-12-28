@@ -9,6 +9,7 @@
 #include "input/ClavierSouris.h"
 #include "rendering/Renderer.h"
 #include "system/PathResolver.h"
+#include "system/UtilsFile.h"
 
 #include "rendering/GestionTextures/TextureManager.h"
 
@@ -23,6 +24,7 @@ void Application::run() {
     glViewport(0, 0, g_windowWidth, g_windowHeight);
     glEnable(GL_DEPTH_TEST);
 
+    setupGlobals();
     setupScene();
     setupShaders();
 
@@ -90,6 +92,11 @@ bool Application::initGlad() {
         return false;
     }
     return true;
+}
+
+void Application::setupGlobals() {
+    g_settingsFilePath = PathResolver::getResourcePath("assets/settings/settingsrotdepl.txt");
+	UtilsFile::loadSettingsSensRot(g_settingsFilePath);
 }
 
 void Application::setupCallbacks() {

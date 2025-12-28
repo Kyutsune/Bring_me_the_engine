@@ -16,6 +16,8 @@ extern Renderer * g_renderer;
 void reloadScene(const std::size_t & index);
 Scene & getScene();
 
+// Fichier contenant ses valeurs
+extern std::string  g_settingsFilePath;
 // Sensibilité de déplacement de la caméra via le clavier
 extern float g_sensibility_depl;
 // Sensibilité de rotation de la caméra via la souris
