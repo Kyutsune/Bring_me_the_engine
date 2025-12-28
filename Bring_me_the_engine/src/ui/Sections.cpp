@@ -178,13 +178,14 @@ namespace Sections {
             std::string name = entity->getName();
             ImGui::PushID(light);
 
-            if (g_forceOpenLightHeader && g_lightExpanded[name]) {
-                ImGui::SetScrollHereY();
+            bool isExpanded = g_lightExpanded[name];
+            if (ImGui::Selectable(name.c_str(), isExpanded)) {
+                g_lightExpanded.clear();
+                g_lightExpanded[name] = !isExpanded;
             }
 
-            if (ImGui::Selectable(name.c_str(), g_lightExpanded[name])) {
-                g_lightExpanded.clear();
-                g_lightExpanded[name] = !g_lightExpanded[name];
+            if (g_forceOpenLightHeader && g_lightExpanded[name]) {
+                ImGui::SetScrollHereY(0.5f); 
             }
 
             if (g_lightExpanded[name]) {
@@ -255,7 +256,6 @@ namespace Sections {
         // Si on clique sur une entité, on force l'ouverture de cette section là
         if (g_forceOpenObjectHeader) {
             ImGui::SetNextItemOpen(true, ImGuiCond_Always);
-            g_forceOpenObjectHeader = false;
         }
         std::shared_ptr<Entity> entityToDelete = nullptr;
 
@@ -266,8 +266,14 @@ namespace Sections {
                 if (name.empty())
                     continue;
 
-                if (ImGui::Selectable(name.c_str(), g_entityExpanded[name])) {
+
+                bool isExpanded = g_entityExpanded[name];
+                if (ImGui::Selectable(name.c_str(), isExpanded)) {
                     g_entityExpanded[name] = !g_entityExpanded[name];
+                }
+
+                if (g_forceOpenObjectHeader && isExpanded) {
+                    ImGui::SetScrollHereY(0.5f);
                 }
 
                 if (g_entityExpanded[name]) {
@@ -327,6 +333,11 @@ namespace Sections {
 
                 ImGui::PopID();
             }
+
+            if (g_forceOpenObjectHeader) {
+                g_forceOpenObjectHeader = false;
+            }
+
             if (entityToDelete) {
                 scene->removeEntity(entityToDelete);
                 g_entityExpanded.erase(entityToDelete->getName());
