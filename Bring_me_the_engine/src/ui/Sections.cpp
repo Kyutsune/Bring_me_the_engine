@@ -357,7 +357,7 @@ namespace Sections {
     }
 
     void performanceSection() {
-        if (ImGui::CollapsingHeader("Performances")) {
+        if (ImGui::CollapsingHeader("Performances: CPU/GPU")) {
             ImGui::Text("GPU Frame Time: %.3f ms", g_perfStats.gpuFrameTimeMs);
             ImGui::Text("GPU Avg Time: %.3f ms", g_perfStats.gpuAvgMs);
             ImGui::Text("GPU FPS: %.2f", g_perfStats.gpuFps);
@@ -367,6 +367,32 @@ namespace Sections {
             ImGui::Separator();
             ImGui::Text("FPS Final: %.2f", g_perfStats.finalFps);
             ImGui::Text("FPS Final (moyenne): %.2f", g_perfStats.avgFinalFps);
+        }
+        if (ImGui::CollapsingHeader("Performances: Entitées rendues")) {
+            ImGui::Text("Entités dessinées: %.0f", g_perfStats.numberEntitiesDrawn);
+            ImGui::Text("Triangles rendus: %.0f", g_perfStats.numberTrianglesRendered);
+            ImGui::Text("Points rendus: %.0f", g_perfStats.numberPointsRendered);
+
+            ImGui::Separator();
+
+            ImGui::Text("Total entités dans la scène: %.0f", g_perfStats.totalNumberEntitiesInScene);
+            ImGui::Text("Total triangles dans la scène: %.0f", g_perfStats.totalNumberTrianglesInScene);
+			ImGui::Text("Total points dans la scène: %.0f", g_perfStats.totalNumberPointsInScene);
+
+            ImGui::Separator();
+            float percentage = 0.0f;
+            if (g_perfStats.totalNumberTrianglesInScene > 0) {
+                percentage = (g_perfStats.numberTrianglesRendered / g_perfStats.totalNumberTrianglesInScene) * 100.0f;
+            }
+
+            // Affichage avec une barre de progression pour que ce soit plus visuel
+            ImGui::Text("%% de triangles rendus:");
+            ImGui::SameLine();
+            ImGui::Text("%.2f%%", percentage);
+
+            // Une barre de progression est super utile pour voir l'efficacité du culling d'un coup d'oeil
+            ImGui::ProgressBar(percentage / 100.0f, ImVec2(-1.0f, 0.0f));
+            
         }
     }
 }

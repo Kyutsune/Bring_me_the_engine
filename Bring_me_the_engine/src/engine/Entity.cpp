@@ -35,6 +35,10 @@ Entity::Entity(const Mat4 & transform, std::shared_ptr<Mesh> mesh,
         m_boundingBox = this->m_mesh->getBoundingBox();
         if (this->m_mesh->getNumberOfIndices() > 5000) { // environ 1666 triangles
             splitMeshIntoGrid(3); // 3x3x3 = 27 morceaux max
+            if (this->m_entity_name == "Bigguy") {
+                std::cout << "oui" << std::endl;
+
+            }
         }
     }
     m_entity_name = name.empty() ? "Unnamed Entity" : name;
