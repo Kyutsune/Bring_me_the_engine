@@ -1,6 +1,8 @@
 #include "engine/Entity.h"
 #include "Globals.h"
 
+#include <map>
+
 Entity::Entity(const Mat4 & transform, std::shared_ptr<Mesh> mesh,
                const std::string & filenameTextDiffuse,
                const std::string & filenameNormalMap,
@@ -31,6 +33,9 @@ Entity::Entity(const Mat4 & transform, std::shared_ptr<Mesh> mesh,
 
     if (this->m_mesh) {
         m_boundingBox = this->m_mesh->getBoundingBox();
+        if (this->m_mesh->getNumberOfIndices() > 5000) { // environ 1666 triangles
+            splitMeshIntoGrid(3); // 3x3x3 = 27 morceaux max
+        }
     }
     m_entity_name = name.empty() ? "Unnamed Entity" : name;
 
@@ -47,6 +52,9 @@ Entity::Entity(const Mat4 & transform, std::shared_ptr<Mesh> mesh,
     m_entity_name = name.empty() ? "Unnamed Entity" : name;
     if (this->m_mesh) {
         m_boundingBox = this->m_mesh->getBoundingBox();
+		if (this->m_mesh->getNumberOfIndices() > 5000) { // environ 1666 triangles
+            splitMeshIntoGrid(3); // 3x3x3 = 27 morceaux max
+        }
     }
     if(material != nullptr) {
         m_material = *material;
@@ -124,4 +132,55 @@ AABB Entity::getTransformedBoundingBox() const {
 
 void Entity::updateTransform() {
     m_transform = Mat4::Scale(m_scale) * m_rotation.toMat4() * Mat4::Translation(m_position);
+}
+
+
+
+void Entity::splitMeshIntoGrid(int gridRes) {
+    if (!m_mesh) return;
+
+    const auto& sourceVertices = m_mesh->getVertices();
+    const auto& sourceIndices = m_mesh->getIndices();
+    AABB globalBox = m_mesh->getBoundingBox();
+
+    Vec3 size = globalBox.m_max - globalBox.m_min;
+    Vec3 cellSize = { size.x / gridRes, size.y / gridRes, size.z / gridRes };
+
+    // Une map pour stocker les triangles par cellule (x,y,z indexés par un int unique)
+    std::map<int, TempSubMeshData> gridMap;
+
+    for (size_t i = 0; i < sourceIndices.size(); i += 3) {
+        // On récupère les 3 sommets du triangle
+        Vertex v1 = sourceVertices[sourceIndices[i]];
+        Vertex v2 = sourceVertices[sourceIndices[i + 1]];
+        Vertex v3 = sourceVertices[sourceIndices[i + 2]];
+
+        // On calcule le centre du triangle pour savoir dans quelle cellule il va
+        Vec3 center = (v1.m_position + v2.m_position + v3.m_position) / 3.0f;
+
+        // Calcul des indices de la cellule
+        int ix = std::clamp(int((center.x - globalBox.m_min.x) / cellSize.x), 0, gridRes - 1);
+        int iy = std::clamp(int((center.y - globalBox.m_min.y) / cellSize.y), 0, gridRes - 1);
+        int iz = std::clamp(int((center.z - globalBox.m_min.z) / cellSize.z), 0, gridRes - 1);
+        int cellID = ix + iy * gridRes + iz * gridRes * gridRes;
+
+        // Ajout des données à la cellule correspondante
+        auto& data = gridMap[cellID];
+        unsigned int startIdx = data.vertices.size();
+        data.vertices.push_back(v1);
+        data.vertices.push_back(v2);
+        data.vertices.push_back(v3);
+        data.indices.push_back(startIdx);
+        data.indices.push_back(startIdx + 1);
+        data.indices.push_back(startIdx + 2);
+    }
+
+    // On crée les vrais SubMeshes à partir de la map
+    m_subMeshes.clear();
+    for (auto& [id, data] : gridMap) {
+        SubMesh sub;
+        sub.mesh = std::make_shared<Mesh>(data.vertices, data.indices);
+        sub.localAABB = sub.mesh->getBoundingBox();
+        m_subMeshes.push_back(sub);
+    }
 }

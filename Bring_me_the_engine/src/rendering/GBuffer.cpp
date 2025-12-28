@@ -141,11 +141,32 @@ int GBuffer::render(const Scene& scene, const Camera& camera, Shader & gBufferSh
                 gBufferShader.set("useSpecularMap", false);
             }
 
-            entity->getMesh()->draw();
+            if (entity->getSubMeshes().empty()) {
+                entity->getMesh()->draw();
+                updatePerformanceStatsOnEntityDrawn(*entity);
+                entity->setVisible(true);
+            }
+            else {
+                bool atLeastOneVisible = false;
+                // Cas découpé : on teste chaque morceau
+                for (const auto& sub : entity->getSubMeshes()) {
+                    // On transforme l'AABB locale du morceau
+                    AABB subWorldBox = sub.localAABB.transform(model);
 
-			updatePerformanceStatsOnEntityDrawn(*entity);
+                    if (frustum.isBoxInFrustum(subWorldBox)) {
+                        sub.mesh->draw(); // On dessine le petit maillage
+                        // On compte UNIQUEMENT ce qui est envoyé au GPU
+                        g_perfStats.numberPointsRendered += sub.mesh->getNumberOfVertices();
+                        g_perfStats.numberTrianglesRendered += sub.mesh->getNumberOfIndices() / 3;
+                        atLeastOneVisible = true;
+                    }
+                }
 
-            entity->setVisible(true);
+                if (atLeastOneVisible) {
+                    g_perfStats.numberEntitiesDrawn++;
+                    entity->setVisible(true);
+                }
+            }
         }
         else{
             entity->setVisible(false);

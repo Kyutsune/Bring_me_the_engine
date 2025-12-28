@@ -27,6 +27,18 @@ inline void updateCameraUniforms(Shader & shader, const Mat4 & model, const Mat4
     shader.setMat4("projection", projection);
 }
 
+struct SubMesh {
+    std::shared_ptr<Mesh> mesh;
+    AABB localAABB;
+};
+
+struct TempSubMeshData {
+    std::vector<Vertex> vertices;
+    std::vector<unsigned int> indices;
+    AABB box;
+};
+
+
 /**
  * @class Entity
  * @brief Représente un objet 3D dans la scène.
@@ -150,10 +162,18 @@ public:
      */
     void updateTransform();
 
+
+    void splitMeshIntoGrid(int gridRes);
+
+    const std::vector<SubMesh>& getSubMeshes() const { return m_subMeshes; }
+
 private:
     std::string m_entity_name;
     std::shared_ptr<Mesh> m_mesh;
+
     AABB m_boundingBox;
+    std::vector<SubMesh> m_subMeshes;
+
 
     Vec3 m_position = Vec3(0.0f);
     Quat m_rotation = Quat::identity();
