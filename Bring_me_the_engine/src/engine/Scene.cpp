@@ -20,6 +20,8 @@ Scene::Scene() : m_view(Mat4::identity()), m_projection(Mat4::identity()) {
 
     SceneLoader::loadScene(1, m_entities, m_lightEntities, m_skybox, m_lightingManager);
 }
+
+// Initialisation de base dans une scène
 Scene::Scene(const int & sceneIndex) : m_view(Mat4::identity()), m_projection(Mat4::identity()) {
     m_camera = Camera(
         Vec3(-7, 3, 1), // position à l'initialisation

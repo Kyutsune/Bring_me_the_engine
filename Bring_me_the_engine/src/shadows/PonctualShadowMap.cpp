@@ -38,7 +38,7 @@ void PonctualShadowMap::init() {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-void PonctualShadowMap::render(const Scene & scene, Shader & shadowShader, const Light & pointLight) {
+void PonctualShadowMap::render(const Scene& scene, Shader& shadowShader, const Light& pointLight) {
     m_lightPosition = pointLight.getPosition();
 
     float nearPlane = 1.0f;
@@ -53,7 +53,7 @@ void PonctualShadowMap::render(const Scene & scene, Shader & shadowShader, const
         Mat4::lookAt(pos, pos + Vec3(0, 1, 0), Vec3(0, 0, 1)),
         Mat4::lookAt(pos, pos + Vec3(0, -1, 0), Vec3(0, 0, -1)),
         Mat4::lookAt(pos, pos + Vec3(0, 0, 1), Vec3(0, -1, 0)),
-        Mat4::lookAt(pos, pos + Vec3(0, 0, -1), Vec3(0, -1, 0))};
+        Mat4::lookAt(pos, pos + Vec3(0, 0, -1), Vec3(0, -1, 0)) };
 
     glViewport(0, 0, m_width, m_height);
     shadowShader.use();
@@ -66,10 +66,9 @@ void PonctualShadowMap::render(const Scene & scene, Shader & shadowShader, const
     glReadBuffer(GL_NONE);
 
     for (int face = 0; face < 6; ++face) {
-        // Attacher la bonne face de la cubemap
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
-                               GL_TEXTURE_CUBE_MAP_POSITIVE_X + face,
-                               m_depthCubemap, 0);
+            GL_TEXTURE_CUBE_MAP_POSITIVE_X + face,
+            m_depthCubemap, 0);
 
         if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
             std::cerr << "Framebuffer incomplete for face " << face << std::endl;
@@ -79,15 +78,18 @@ void PonctualShadowMap::render(const Scene & scene, Shader & shadowShader, const
         glClear(GL_DEPTH_BUFFER_BIT);
 
         Mat4 shadowMatrix = shadowViews[face] * shadowProj;
-
-        Vec4 testPoint = shadowMatrix * Vec4(m_lightPosition, 1.0f);
-        Vec3 ndc = Vec3(testPoint.x / testPoint.w, testPoint.y / testPoint.w, testPoint.z / testPoint.w);
-
         shadowShader.set("shadowMatrix", shadowMatrix);
 
-        for (const auto & entity : scene.getEntities()) {
+        for (const auto& entity : scene.getEntities()) {
             shadowShader.set("model", entity->getTransform(), false);
-            entity->getMesh()->draw();
+
+            // On parcourt chaque groupe de matériaux
+            for (const auto& sub : entity->getSubMeshes()) {
+                // On parcourt chaque cellule spatiale pour dessiner la géométrie
+                for (const auto& cell : sub.gridChunks) {
+                    cell.mesh->draw();
+                }
+            }
         }
     }
 
