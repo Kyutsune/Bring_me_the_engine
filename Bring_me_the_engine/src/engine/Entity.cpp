@@ -1,5 +1,6 @@
 #include "engine/Entity.h"
 #include "Globals.h"
+#include <algorithm>
 
 #include <map>
 
