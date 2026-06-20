@@ -44,6 +44,7 @@ void DirectionalShadowMap::render(const Scene& scene, Shader& shadowShader) {
     if (dirLight.getType() == LightType::LIGHT_ERROR || !dirLight.isActive())
         return;
 
+    // --- Calcul des matrices de vue et projection (inchangé) ---
     Vec3 lightTarget = dirLight.getPosition() + dirLight.getDirection();
     Vec3 up = std::abs(dirLight.getDirection().z) > 0.9f ? Vec3(0, 1, 0) : Vec3(0, 0, 1);
     Mat4 lightView = Mat4::lookAt(dirLight.getPosition(), lightTarget, up);
@@ -69,8 +70,19 @@ void DirectionalShadowMap::render(const Scene& scene, Shader& shadowShader) {
     for (const auto& entity : scene.getEntities()) {
         if (entity->getName() == "Sol_beton") continue;
 
-        shadowShader.set("model", entity->getTransform(), false);
-        entity->getMesh()->draw();
+        Mat4 model = entity->getTransform();
+        shadowShader.set("model", model, false);
+
+        for (const auto& sub : entity->getSubMeshes()) {
+
+            for (const auto& cell : sub.gridChunks) {
+
+                AABB cellWorldBox = cell.localAABB.transform(model);
+                if (lightFrustum.isBoxInFrustum(cellWorldBox)) {
+                    cell.mesh->draw();
+                }
+            }
+        }
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);

@@ -49,18 +49,33 @@ void resetPerformancesStatsOnMeshesDraw() {
 
 void updatePerformanceStatsOnAddedEntity(const Entity& entity) {
     g_perfStats.totalNumberEntitiesInScene++;
-    g_perfStats.totalNumberPointsInScene += entity.getMesh()->getNumberOfVertices();
-    g_perfStats.totalNumberTrianglesInScene += entity.getMesh()->getNumberOfIndices() / 3;
+
+    for (const auto& sub : entity.getSubMeshes()) {
+        for (const auto& chunk : sub.gridChunks) {
+            g_perfStats.totalNumberPointsInScene += chunk.mesh->getNumberOfVertices();
+            g_perfStats.totalNumberTrianglesInScene += chunk.mesh->getNumberOfIndices() / 3;
+        }
+    }
 }
 
 void updatePerformanceStatsOnRemovedEntity(const Entity& entity) {
     g_perfStats.totalNumberEntitiesInScene--;
-    g_perfStats.totalNumberPointsInScene -= entity.getMesh()->getNumberOfVertices();
-    g_perfStats.totalNumberTrianglesInScene -= entity.getMesh()->getNumberOfIndices() / 3;
+
+    for (const auto& sub : entity.getSubMeshes()) {
+        for (const auto& chunk : sub.gridChunks) {
+            g_perfStats.totalNumberPointsInScene -= chunk.mesh->getNumberOfVertices();
+            g_perfStats.totalNumberTrianglesInScene -= chunk.mesh->getNumberOfIndices() / 3;
+        }
+    }
 }
 
 void updatePerformanceStatsOnEntityDrawn(const Entity& entity) {
-    g_perfStats.numberPointsRendered += entity.getMesh()->getNumberOfVertices();
-    g_perfStats.numberTrianglesRendered += entity.getMesh()->getNumberOfIndices() / 3;
     g_perfStats.numberEntitiesDrawn++;
+
+    for (const auto& sub : entity.getSubMeshes()) {
+        for (const auto& chunk : sub.gridChunks) {
+            g_perfStats.numberPointsRendered += chunk.mesh->getNumberOfVertices();
+            g_perfStats.numberTrianglesRendered += chunk.mesh->getNumberOfIndices() / 3;
+        }
+    }
 }

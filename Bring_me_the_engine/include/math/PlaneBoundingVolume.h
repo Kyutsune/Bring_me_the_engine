@@ -138,4 +138,14 @@ struct AABB {
             Vec3(m_max.x, m_max.y, m_max.z),
             Vec3(m_min.x, m_max.y, m_max.z)};
     }
+
+    inline void merge(const AABB& other) {
+        m_min.x = std::min(m_min.x, other.m_min.x);
+        m_min.y = std::min(m_min.y, other.m_min.y);
+        m_min.z = std::min(m_min.z, other.m_min.z);
+
+        m_max.x = std::max(m_max.x, other.m_max.x);
+        m_max.y = std::max(m_max.y, other.m_max.y);
+        m_max.z = std::max(m_max.z, other.m_max.z);
+    }
 };

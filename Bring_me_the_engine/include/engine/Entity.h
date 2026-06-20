@@ -27,7 +27,8 @@ inline void updateCameraUniforms(Shader & shader, const Mat4 & model, const Mat4
     shader.setMat4("projection", projection);
 }
 
-struct SubMesh {
+// Structure pour stocker la cellule qu'on va passer dans le frustum culling
+struct SpatialCell {
     std::shared_ptr<Mesh> mesh;
     AABB localAABB;
 };
@@ -36,6 +37,14 @@ struct TempSubMeshData {
     std::vector<Vertex> vertices;
     std::vector<unsigned int> indices;
     AABB box;
+};
+
+
+// Structure pour stocker une sous partie du maillage
+struct SubMesh {
+    Material material;
+    std::vector<SpatialCell> gridChunks;
+    AABB subMeshAABB;
 };
 
 
@@ -50,7 +59,7 @@ struct TempSubMeshData {
 class Entity : public std::enable_shared_from_this<Entity> {
 public:
     /// Constructeur par défaut (transform identitaire, mesh nul)
-    Entity() : m_transform(Mat4::identity()), m_mesh(nullptr) {}
+    Entity() : m_transform(Mat4::identity()) {}
 
     /**
      * @brief Constructeur avec mesh et textures
@@ -89,10 +98,9 @@ public:
     Mat4 & getTransform() { return m_transform; }
     void setTransform(const Mat4 & newTransform);
 
-    Material & getMaterial() { return m_material; }
-    const Material & getMaterial() const { return m_material; }
+    Material& getMaterial(size_t index = 0) { return m_subMeshes.at(index).material; }
+    const Material& getMaterial(size_t index = 0) const { return m_subMeshes.at(index).material; }
 
-    const std::shared_ptr<Mesh> & getMesh() const { return m_mesh; }
 
     bool isVisible() const { return visible; }
     void setVisible(bool v) { visible = v; }
@@ -116,22 +124,62 @@ public:
         updateTransform();
     }
 
-    Vec3 getBaseColor() const { return m_material.m_baseColor; }
-    void setBaseColor(const Vec3 & color) {
-        m_material.m_baseColor = color;
+    Vec3 getBaseColor() const { return m_subMeshes.at(0).material.m_baseColor; }
+    void setBaseColor(const Vec3& color) {
+        for (auto& sub : m_subMeshes) {
+            sub.material.m_baseColor = color;
+        }
     }
 
-	bool doItUseTextureDiffuse() const { return m_material.m_useDiffuse; }
-    bool hasTextureDiffuse() const { return m_material.m_diffuseTexture != nullptr; }
+    bool doItUseTextureDiffuse() const {
+        for (const auto& sub : m_subMeshes) {
+            if (sub.material.m_useDiffuse) {
+                return true;
+            }
+        }
+        return false;
+    }
 
-	bool doItUseNormalMap() const { return m_material.m_useNormal; }
-	bool hasNormalMap() const { return m_material.m_normalMap != nullptr; }
+    bool hasTextureDiffuse() const {
+        for (const auto& sub : m_subMeshes) {
+            if (sub.material.m_diffuseTexture != nullptr) return true;
+        }
+        return false;
+    }
+
+	bool doItUseNormalMap() const { 
+        for (const auto& sub : m_subMeshes) {
+            if (sub.material.m_useNormal) {
+                return true;
+            }
+        }
+		return false;
+    }
+	bool hasNormalMap() const { 
+        for (const auto& sub : m_subMeshes) {
+            if (sub.material.m_normalMap != nullptr) return true;
+        }
+		return false;
+    }
     
-	bool doItUseSpecularMap() const { return m_material.m_useSpecular; }
-	bool hasSpecularMap() const { return m_material.m_specularMap != nullptr; }
+	bool doItUseSpecularMap() const { 
+        for (const auto& sub : m_subMeshes) {
+            if (sub.material.m_useSpecular) {
+                return true;
+            }
+		}
+		return false;
+    }
+	bool hasSpecularMap() const {
+        for (const auto& sub : m_subMeshes) {
+            if (sub.material.m_specularMap != nullptr) return true;
+		}
+		return false;
+    }
 
     // --- Fonctionnalités ---
     /**
+	 * @deprecated depuis qu'on utilise le deferred
      * @brief Dessine l'entité avec un shader donné
      *
      * @param shader Shader utilisé pour le rendu
@@ -139,9 +187,6 @@ public:
      * @param projection Matrice projection de la caméra
      */
     void drawForward(Shader & shader, const Mat4 & view, const Mat4 & projection);
-
-
-    void drawDeferred(Shader& shader, const Mat4& view, const Mat4& projection);
 
     /**
      * @brief Récupère la bounding box non transformée
@@ -162,17 +207,19 @@ public:
      */
     void updateTransform();
 
-
-    void splitMeshIntoGrid(int gridRes);
+    std::vector<SpatialCell> splitSpecificMeshIntoGrid(std::shared_ptr<Mesh> mesh, int gridRes);
 
     const std::vector<SubMesh>& getSubMeshes() const { return m_subMeshes; }
 
+    void addSubMesh(std::shared_ptr<Mesh> mesh, const Material& mat);
+
 private:
     std::string m_entity_name;
-    std::shared_ptr<Mesh> m_mesh;
+
+    std::vector<SubMesh> m_subMeshes;
 
     AABB m_boundingBox;
-    std::vector<SubMesh> m_subMeshes;
+
 
 
     Vec3 m_position = Vec3(0.0f);
@@ -180,6 +227,6 @@ private:
     Vec3 m_scale = Vec3(1.0f, 1.0f, 1.0f);
     Mat4 m_transform;
 
-    Material m_material;
+
     bool visible = false;
 };

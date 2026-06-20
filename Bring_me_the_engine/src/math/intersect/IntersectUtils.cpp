@@ -66,7 +66,8 @@ namespace IntersectUtils {
         return true;
     }
 
-    bool intersectEntity(const Ray & ray, const Entity & entity, IntersectionInfo & outInfo, float tmax) {
+    bool intersectEntity(const Ray& ray, const Entity& entity, IntersectionInfo& outInfo, float tmax) {
+        // 1. Logique spécifique aux lumières (Inchangée)
         if (entity.getName().rfind("Light_", 0) == 0) {
             Vec3 center = entity.getPosition();
             Vec3 scale = entity.getTransform().getScale();
@@ -88,33 +89,50 @@ namespace IntersectUtils {
             return false;
         }
 
-        const std::shared_ptr<Mesh> mesh = entity.getMesh();
-        if (!mesh)
-            return false;
+        // --- NOUVELLE LOGIQUE POUR LES ENTITÉS COMPLEXES ---
 
-        const std::vector<Vertex> & vertices = mesh->getVertices();
-        const std::vector<unsigned int> & indices = mesh->getIndices();
-        Mat4 transform = entity.getTransform();
+        //TODO: OPTIMISATION : Test de la Bounding Box globale
+        // Si on ne touche pas la boîte englobante de l'entité, inutile d'aller voir les triangles.
+        // Note : Il faudrait une fonction rayIntersectsAABB pour que ce soit parfait
+         //if (!rayIntersectsAABB(ray, entity.getTransformedBoundingBox())) return false;
 
         bool hit = false;
+        Mat4 transform = entity.getTransform();
+        const auto& subMeshes = entity.getSubMeshes();
 
-        for (size_t i = 0; i < indices.size(); i += 3) {
-            Vec3 a = transform * vertices[indices[i]].m_position;
-            Vec3 b = transform * vertices[indices[i + 1]].m_position;
-            Vec3 c = transform * vertices[indices[i + 2]].m_position;
+        // 3. On parcourt chaque SubMesh (groupes de matériaux)
+        for (const auto& sub : subMeshes) {
 
-            Vec3 intersection;
-            Vec3 normal;
-            float t;
+            // 4. On parcourt chaque cellule spatiale (le découpage en grille)
+            for (const auto& cell : sub.gridChunks) {
 
-            if (intersect(ray.origin, ray.direction, tmax, a, b, c, intersection, normal, t)) {
-                if (t < outInfo.t) {
-                    outInfo.hit = true;
-                    outInfo.t = t;
-                    outInfo.position = intersection;
-                    outInfo.normal = normal;
-                    outInfo.entity = std::const_pointer_cast<Entity>(std::static_pointer_cast<const Entity>(entity.shared_from_this())); // nécessite que Entity hérite de `std::enable_shared_from_this<Entity>`
-                    hit = true;
+                // On récupère les données du mesh de cette cellule
+                const std::vector<Vertex>& vertices = cell.mesh->getVertices();
+                const std::vector<unsigned int>& indices = cell.mesh->getIndices();
+
+                // 5. Test d'intersection triangle par triangle
+                for (size_t i = 0; i < indices.size(); i += 3) {
+                    Vec3 a = transform * vertices[indices[i]].m_position;
+                    Vec3 b = transform * vertices[indices[i + 1]].m_position;
+                    Vec3 c = transform * vertices[indices[i + 2]].m_position;
+
+                    Vec3 intersection;
+                    Vec3 normal;
+                    float t;
+
+                    // Utilisation de ta fonction intersect existante
+                    if (intersect(ray.origin, ray.direction, tmax, a, b, c, intersection, normal, t)) {
+                        if (t < outInfo.t) {
+                            outInfo.hit = true;
+                            outInfo.t = t;
+                            outInfo.position = intersection;
+                            outInfo.normal = normal;
+                            outInfo.entity = std::const_pointer_cast<Entity>(
+                                std::static_pointer_cast<const Entity>(entity.shared_from_this())
+                            );
+                            hit = true;
+                        }
+                    }
                 }
             }
         }

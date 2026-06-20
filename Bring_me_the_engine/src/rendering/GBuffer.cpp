@@ -87,10 +87,9 @@ void GBuffer::bindForReading(Shader & shader) {
 	glActiveTexture(GL_TEXTURE3); glBindTexture(GL_TEXTURE_2D, m_gSpecular); shader.set("gSpecular", 3);
 }
 
-int GBuffer::render(const Scene& scene, const Camera& camera, Shader & gBufferShader) {
+int GBuffer::render(const Scene& scene, const Camera& camera, Shader& gBufferShader) {
     gBufferShader.use();
     bindForWriting();
-
 
     glEnable(GL_DEPTH_TEST);
     glDepthMask(GL_TRUE);
@@ -100,75 +99,76 @@ int GBuffer::render(const Scene& scene, const Camera& camera, Shader & gBufferSh
     const std::vector<std::shared_ptr<Entity>>& entities = scene.getEntities();
     const Frustum& frustum = scene.getFrustum();
 
-    for (const std::shared_ptr<Entity>& entity : entities) {
+    for (const auto& entity : entities) {
+        // Test de la bounding box globale de l'entité
         if (frustum.isBoxInFrustum(entity->getTransformedBoundingBox())) {
             Transform model = entity->getTransform();
-
             Transform mvp = model * view * proj;
+
             gBufferShader.set("mvpMatrix", mvp, false);
             gBufferShader.set("modelMatrix", model, false);
 
-            gBufferShader.set("baseColor", entity->getMaterial().m_baseColor);
-            gBufferShader.set("useVertexColor", entity->getMaterial().m_useVertexColor);
+            bool atLeastOneChunkVisible = false;
 
-            // Texture diffuse
-            if (entity->hasTextureDiffuse() && entity->doItUseTextureDiffuse()) {
-                gBufferShader.set("useTexture", 1);
-                gBufferShader.set("albedoMap", 0);
-                entity->getMaterial().m_diffuseTexture->bind(0);
-            }
-            else {
-                gBufferShader.set("useTexture", 0);
-            }
+            // Première boucle : On parcourt les différents matériaux (SubMeshes)
+            for (const auto& sub : entity->getSubMeshes()) {
+                const Material& mat = sub.material;
 
-            // Normal map
-            if (entity->hasNormalMap() && entity->doItUseNormalMap()) {
-                gBufferShader.set("useNormalMap", true);
-                gBufferShader.set("normalMap", 1);
-                entity->getMaterial().m_normalMap->bind(1);
-            }
-            else {
-                gBufferShader.set("useNormalMap", false);
-            }
+                // Configuration du matériau pour ce SubMesh
+                gBufferShader.set("baseColor", mat.m_baseColor);
+                gBufferShader.set("useVertexColor", mat.m_useVertexColor);
 
-            // Specular map
-            if (entity->hasSpecularMap() && entity->doItUseSpecularMap()) {
-                gBufferShader.set("useSpecularMap", true);
-                gBufferShader.set("specularMap", 2);
-                entity->getMaterial().m_specularMap->bind(2);
-            }
-            else {
-                gBufferShader.set("useSpecularMap", false);
-            }
+                // Texture Albedo
+                if (mat.m_diffuseTexture && mat.m_useDiffuse) {
+                    gBufferShader.set("useTexture", 1);
+                    gBufferShader.set("albedoMap", 0);
+                    mat.m_diffuseTexture->bind(0);
+                }
+                else {
+                    gBufferShader.set("useTexture", 0);
+                }
 
-            if (entity->getSubMeshes().empty()) {
-                entity->getMesh()->draw();
-                updatePerformanceStatsOnEntityDrawn(*entity);
-                entity->setVisible(true);
-            }
-            else {
-                bool atLeastOneVisible = false;
-                // Cas découpé : on teste chaque morceau
-                for (const auto& sub : entity->getSubMeshes()) {
-                    // On transforme l'AABB locale du morceau
-                    AABB subWorldBox = sub.localAABB.transform(model);
+                // Normal Map
+                if (mat.m_normalMap && mat.m_useNormal) {
+                    gBufferShader.set("useNormalMap", true);
+                    gBufferShader.set("normalMap", 1);
+                    mat.m_normalMap->bind(1);
+                }
+                else {
+                    gBufferShader.set("useNormalMap", false);
+                }
 
-                    if (frustum.isBoxInFrustum(subWorldBox)) {
-                        sub.mesh->draw(); // On dessine le petit maillage
-                        // On compte UNIQUEMENT ce qui est envoyé au GPU
-                        g_perfStats.numberPointsRendered += sub.mesh->getNumberOfVertices();
-                        g_perfStats.numberTrianglesRendered += sub.mesh->getNumberOfIndices() / 3;
-                        atLeastOneVisible = true;
+                // Specular Map
+                if (mat.m_specularMap && mat.m_useSpecular) {
+                    gBufferShader.set("useSpecularMap", true);
+                    gBufferShader.set("specularMap", 2);
+                    mat.m_specularMap->bind(2);
+                }
+                else {
+                    gBufferShader.set("useSpecularMap", false);
+                }
+
+                // Deuxième boucle : Rendu des cellules spatiales pour ce matériau
+                for (const auto& cell : sub.gridChunks) {
+                    AABB cellWorldBox = cell.localAABB.transform(model);
+
+                    if (frustum.isBoxInFrustum(cellWorldBox)) {
+                        cell.mesh->draw();
+
+                        // Mise à jour des stats de performance
+                        g_perfStats.numberPointsRendered += cell.mesh->getNumberOfVertices();
+                        g_perfStats.numberTrianglesRendered += cell.mesh->getNumberOfIndices() / 3;
+                        atLeastOneChunkVisible = true;
                     }
                 }
+            }
 
-                if (atLeastOneVisible) {
-                    g_perfStats.numberEntitiesDrawn++;
-                    entity->setVisible(true);
-                }
+            if (atLeastOneChunkVisible) {
+                g_perfStats.numberEntitiesDrawn++;
+                entity->setVisible(true);
             }
         }
-        else{
+        else {
             entity->setVisible(false);
         }
     }

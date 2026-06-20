@@ -70,6 +70,8 @@ public:
     void removeEntity(const std::shared_ptr<Entity> & entity);
 
 private:
+	//TODO: Pouvoir ajouter plusieurs caméra et switch d'une caméra à l'autre
+    // Donc un tableau de caméras, et une caméra active
     Camera m_camera;                                  ///< Caméra de la scène
     Mat4 m_view;                                      ///< Matrice de vue
     Mat4 m_projection;                                ///< Matrice de projection

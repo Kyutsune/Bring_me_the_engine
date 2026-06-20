@@ -273,6 +273,28 @@
           0
         ]
       }
+    },
+    {
+      "name": "Arbre",
+      "mesh": "assets/test/Arbre_procédural/retour.obj",
+      "material": {},
+      "transform": {
+        "translate": [
+          4,
+          -1,
+          3
+        ],
+        "scale": [
+          0.2,
+          0.2,
+          0.2
+        ],
+        "rotate": [
+          0,
+          49,
+          0
+        ]
+      }
     }
   ]
 }

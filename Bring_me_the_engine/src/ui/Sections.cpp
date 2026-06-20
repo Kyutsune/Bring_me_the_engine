@@ -81,20 +81,31 @@ namespace Sections {
         }
     }
 
-    void textureSection(Scene * scene) {
+    void textureSection(Scene* scene) {
         if (ImGui::CollapsingHeader("Textures")) {
-            for (std::shared_ptr<Entity> & entityPtr : scene->getEntities()) {
+            for (auto& entityPtr : scene->getEntities()) {
+                // On utilise le pointeur de l'entité comme ID parent
                 ImGui::PushID(entityPtr.get());
 
-                ImGui::SeparatorText(("Entité: " + entityPtr->getName()).c_str());
-                Material & material = entityPtr->getMaterial();
+                ImGui::SeparatorText(entityPtr->getName().c_str());
 
-                if (material.m_diffuseTexture)
-                    ImGui::Checkbox("Utiliser texture diffuse", &material.m_useDiffuse);
-                if (material.m_normalMap)
-                    ImGui::Checkbox("Utiliser normal map", &material.m_useNormal);
-                if (material.m_specularMap)
-                    ImGui::Checkbox("Utiliser specular map", &material.m_useSpecular);
+                int subIdx = 0;
+                for (auto& sub : entityPtr->getSubMeshes()) {
+                    ImGui::PushID(subIdx++); 
+
+                    ImGui::Text("Partie %d", subIdx);
+
+                    Material& mat = const_cast<Material&>(sub.material);
+
+                    if (mat.m_diffuseTexture)
+                        ImGui::Checkbox("Utiliser texture diffuse", &mat.m_useDiffuse);
+                    if (mat.m_normalMap)
+                        ImGui::Checkbox("Utiliser normal map", &mat.m_useNormal);
+                    if (mat.m_specularMap)
+                        ImGui::Checkbox("Utiliser specular map", &mat.m_useSpecular);
+
+                    ImGui::PopID();
+                }
 
                 ImGui::PopID();
             }
@@ -357,6 +368,7 @@ namespace Sections {
             if (entityToDelete) {
                 scene->removeEntity(entityToDelete);
                 g_entityExpanded.erase(entityToDelete->getName());
+				updatePerformanceStatsOnRemovedEntity(*entityToDelete);
             }
         }
     }
