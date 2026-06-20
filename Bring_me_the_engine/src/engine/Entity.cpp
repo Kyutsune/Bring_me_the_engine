@@ -1,6 +1,7 @@
 #include "engine/Entity.h"
 #include "Globals.h"
 
+#include <algorithm>
 #include <map>
 
 Entity::Entity(const Mat4 & transform, std::shared_ptr<Mesh> mesh,
