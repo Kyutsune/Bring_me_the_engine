@@ -276,7 +276,7 @@
     },
     {
       "name": "Arbre",
-      "mesh": "assets/test/Arbre_procédural/retour.obj",
+      "mesh": "assets/test/Arbre_procédural/arbre.obj",
       "material": {},
       "transform": {
         "translate": [
