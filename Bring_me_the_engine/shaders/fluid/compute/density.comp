@@ -1,0 +1,44 @@
+#version 430
+layout(local_size_x = 128) in;
+
+struct Particle {
+    vec4 position;
+    vec4 velocity;
+};
+
+layout(std430, binding = 0) buffer InBuffer { Particle particles[]; } inBuf;
+layout(std430, binding = 1) buffer OutBuffer { Particle particles[]; } outBuf;
+
+uniform float smoothingRadius;
+uniform float particleMass;
+uniform int particleCount;
+
+void main() {
+    uint id = gl_GlobalInvocationID.x;
+    if (id >= particleCount) return;
+
+    vec3 posI = inBuf.particles[id].position.xyz;
+        
+    float h = smoothingRadius;
+    float h2 = h * h;
+    float h8 = h2 * h2 * h2 * h2;
+    float coeff_kernel = 4.0 / (3.14159265 * h8);
+    
+    float density = (4.0 * particleMass) / (3.14159265 * h2);   
+
+    for (int j = 0; j < particleCount; j++) {
+        if (id == j) continue;
+
+        vec3 posJ = inBuf.particles[j].position.xyz;
+        vec3 vec_ij = posI - posJ;
+        float r2 = dot(vec_ij, vec_ij);
+
+        if (r2 < h2) {
+            float h2_min_r2 = h2 - r2;
+            density += coeff_kernel * particleMass * h2_min_r2 * h2_min_r2 * h2_min_r2;
+        }
+    }
+
+    outBuf.particles[id].position = vec4(posI, density);
+    outBuf.particles[id].velocity = inBuf.particles[id].velocity;
+}

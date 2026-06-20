@@ -3,34 +3,36 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "../external/stb/stb_image_write.h"
 
-#include <numeric>
 #include <deque>
+#include <numeric>
 
-Renderer::Renderer(Shader* entityShader, Shader* lightShader, Shader* skyboxShader, Shader* boundingBoxShader, Shader* shadowShaderDirectionnal, 
-                   Shader* shadowShaderPonctual, Shader* gBufferShader, Shader* deferredLightingShader)
+Renderer::Renderer(Shader * entityShader, Shader * lightShader, Shader * skyboxShader, Shader * boundingBoxShader, Shader * shadowShaderDirectionnal,
+                   Shader * shadowShaderPonctual, Shader * gBufferShader, Shader * deferredLightingShader)
     : m_entityShader(entityShader),
-    m_lightShader(lightShader),
-    m_skyboxShader(skyboxShader),
-    m_boundingBoxShader(boundingBoxShader),
-    m_shadowShaderDirectionnal(shadowShaderDirectionnal),
-    m_shadowShaderPonctual(shadowShaderPonctual),
-    m_shadowManager(shadowShaderDirectionnal, shadowShaderPonctual),
-    m_gBufferShader(gBufferShader),
-    m_deferredLightingShader(deferredLightingShader){
-	m_gBuffer.init();
+      m_lightShader(lightShader),
+      m_skyboxShader(skyboxShader),
+      m_boundingBoxShader(boundingBoxShader),
+      m_shadowShaderDirectionnal(shadowShaderDirectionnal),
+      m_shadowShaderPonctual(shadowShaderPonctual),
+      m_shadowManager(shadowShaderDirectionnal, shadowShaderPonctual),
+      m_gBufferShader(gBufferShader),
+      m_deferredLightingShader(deferredLightingShader) {
+    m_gBuffer.init();
 
-	m_renderType = RenderType::DEFERRED;
+    m_renderType = RenderType::DEFERRED;
     std::cout << "[RENDERER] Render Type init on " << (m_renderType == RenderType::FORWARD ? "FORWARD" : "DEFERRED") << " rendering" << std::endl;
-
 
     glGenVertexArrays(1, &fullscreenVAO);
 
     initShadowMap();
+
+    m_fluidSystem = std::make_unique<FluidSystem>();
+    m_fluidSystem->init(1000);
 }
 
-Renderer::~Renderer(){
+Renderer::~Renderer() {
     std::cout << "Destruction du Renderer" << std::endl;
-    std::cout<< "Performances moyennes durant l'exécution :" << std::endl;
+    std::cout << "Performances moyennes durant l'exécution :" << std::endl;
     std::cout << " - GPU Frame time: " << std::fixed << std::setprecision(3) << g_perfStats.gpuAvgMs << " ms"
               << " (" << g_perfStats.gpuFps << " FPS)" << std::endl;
     std::cout << " - CPU Frame time: " << std::fixed << std::setprecision(3) << g_perfStats.cpuFrameTimeMs << " ms"
@@ -63,24 +65,31 @@ void Renderer::renderSceneForward(const Scene & scene) {
     renderLightEntities(scene, view, projection);
 }
 
-void Renderer::renderSceneDeferred(const Scene& scene) {
+void Renderer::renderSceneDeferred(const Scene & scene) {
     Mat4 view = scene.getCamera().getViewMatrix();
     Mat4 projection = scene.getCamera().getProjectionMatrix();
 
-	// On va remplir notre GBuffer avec les entités de la scène
-	m_gBuffer.render(scene, scene.getCamera(), *m_gBufferShader);
+    // On va remplir notre GBuffer avec les entités de la scène
+    m_gBuffer.render(scene, scene.getCamera(), *m_gBufferShader);
 
-	// A partir de la, on va réaliser la passe d'éclairage en utilisant le GBuffer via le shader d'éclairage différé
+    // Rendu du système de fluides dans le GBuffer
+    m_gBuffer.bindForWritingWithNoClear();
+    glEnable(GL_DEPTH_TEST);
+    glDepthMask(GL_TRUE);
+    glDepthFunc(GL_LESS);
+    m_fluidSystem->render(scene.getCamera(), projection);
+
+    // A partir de la, on va réaliser la passe d'éclairage en utilisant le GBuffer via le shader d'éclairage différé
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	m_deferredLightingShader->use();
+    m_deferredLightingShader->use();
 
-	// Shadow manager : bind les ombres actives dans le shader
-	m_shadowManager.bindShadows(*m_deferredLightingShader, scene);
+    // Shadow manager : bind les ombres actives dans le shader
+    m_shadowManager.bindShadows(*m_deferredLightingShader, scene);
 
-	// Envoi des lumières
-	scene.getLightingManager().applyLightning(*m_deferredLightingShader, scene.getCamera().getPosition());
+    // Envoi des lumières
+    scene.getLightingManager().applyLightning(*m_deferredLightingShader, scene.getCamera().getPosition());
 
     // Bind des textures du GBuffer
     m_gBuffer.bindForReading(*m_deferredLightingShader);
@@ -88,7 +97,7 @@ void Renderer::renderSceneDeferred(const Scene& scene) {
     // Les derniers uniforms nécessaires au rendu
     m_deferredLightingShader->set("inverseView", view.inverse(), false);
     m_deferredLightingShader->set("inverseProjection", projection.inverse(), false);
-	m_deferredLightingShader->set("camPos", scene.getCamera().getPosition());
+    m_deferredLightingShader->set("camPos", scene.getCamera().getPosition());
 
     glDisable(GL_DEPTH_TEST);
     glBindVertexArray(fullscreenVAO);
@@ -96,18 +105,15 @@ void Renderer::renderSceneDeferred(const Scene& scene) {
     glBindVertexArray(0);
     glEnable(GL_DEPTH_TEST);
 
-
     m_gBuffer.blitDepthToDefaultBuffer();
 
     // Skybox
     if (scene.getSkybox() && m_skyboxShader) {
         renderSkybox(scene.getSkybox(), view, projection);
     }
-	// Dessin des entités représentant les lumières
+    // Dessin des entités représentant les lumières
     renderLightEntities(scene, view, projection);
 }
-
-
 
 void Renderer::renderSkybox(const Skybox * skybox, const Mat4 & view, const Mat4 & projection) {
     glActiveTexture(GL_TEXTURE0);
@@ -120,9 +126,9 @@ void Renderer::renderEntities(const Scene & scene, const Mat4 & view, const Mat4
     const std::vector<std::shared_ptr<Entity>> & entities = scene.getEntities();
 
     for (const std::shared_ptr<Entity> & entity : entities) {
-        //TODO: Ici on recalcule les bounding box transformée à chaque frame, ce qui est pas optimal
-        // On pourrait stocker la AABB(déjà fait) et ne la recalculer que si la transformation de l'entité change
-        if (frustum.isBoxInFrustum(entity->getTransformedBoundingBox())) {   
+        // TODO: Ici on recalcule les bounding box transformée à chaque frame, ce qui est pas optimal
+        //  On pourrait stocker la AABB(déjà fait) et ne la recalculer que si la transformation de l'entité change
+        if (frustum.isBoxInFrustum(entity->getTransformedBoundingBox())) {
             entity->drawForward(*m_entityShader, view, projection);
             entity->setVisible(true);
             updatePerformanceStatsOnEntityDrawn(*entity);
@@ -157,37 +163,39 @@ void Renderer::renderLightEntities(const Scene & scene, const Mat4 & view, const
     }
 }
 
-
-
-
 void Renderer::renderFrame(const Scene & scene) {
     // Rendu des ombres
     m_shadowRenderTimer.start();
     m_shadowManager.renderShadows(scene);
     m_shadowRenderTimer.stop();
 
+    // Mise à jour du système de fluides
+    m_fluidSystem->update(0.00025f);
+
     // Rendu principal
     m_sceneRenderTimer.start();
 
     resetPerformancesStatsOnMeshesDraw();
 
-    if(m_renderType == RenderType::FORWARD)
+    if (m_renderType == RenderType::FORWARD)
         renderSceneForward(scene);
-	else if (m_renderType == RenderType::DEFERRED)
-		renderSceneDeferred(scene);
+    else if (m_renderType == RenderType::DEFERRED)
+        renderSceneDeferred(scene);
 
     m_sceneRenderTimer.stop();
 
-    //TODO: Retirer tout ça du cout et le rajouter dans Imgui dans la partie "Performances"
-	static bool debugPrinted = false;
+    // m_fluidSystem->render(scene.getCamera());
+
+    // TODO: Retirer tout ça du cout et le rajouter dans Imgui dans la partie "Performances"
+    static bool debugPrinted = false;
     if (debugPrinted) {
         std::cout << "Points rendus: " << g_perfStats.numberPointsRendered
-            << " | Triangles rendus: " << g_perfStats.numberTrianglesRendered
-            << " | Entités rendus: " << g_perfStats.numberEntitiesDrawn << std::endl;
+                  << " | Triangles rendus: " << g_perfStats.numberTrianglesRendered
+                  << " | Entités rendus: " << g_perfStats.numberEntitiesDrawn << std::endl;
 
         std::cout << " | Nombre d'entités dans la scène: " << g_perfStats.totalNumberEntitiesInScene
-            << " | Nombre de Points totaux dans la scène" << g_perfStats.totalNumberPointsInScene
-            << " | Nombre de Triangles totaux dans la scène" << g_perfStats.totalNumberTrianglesInScene << std::endl;
+                  << " | Nombre de Points totaux dans la scène" << g_perfStats.totalNumberPointsInScene
+                  << " | Nombre de Triangles totaux dans la scène" << g_perfStats.totalNumberTrianglesInScene << std::endl;
     }
 
     // Script pour les temps de rendu GPU et CPU

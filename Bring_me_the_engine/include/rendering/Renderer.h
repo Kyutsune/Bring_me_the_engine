@@ -11,6 +11,8 @@
 #include "rendering/GpuTimer.h"
 #include "rendering/GBuffer.h"
 
+#include "engine/FluidSystem/FluidSystem.h"
+
 enum class RenderType {
     FORWARD,
 	DEFERRED
@@ -147,6 +149,8 @@ private:
 
 
     RenderType m_renderType;
+
+    std::unique_ptr<FluidSystem> m_fluidSystem;
 
 
     // AVENIR: utile seulement pour debug, pourrait être déplacé

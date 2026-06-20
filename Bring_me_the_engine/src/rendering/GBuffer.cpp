@@ -80,6 +80,11 @@ void GBuffer::bindForWriting() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
+void GBuffer::bindForWritingWithNoClear() {
+    glBindFramebuffer(GL_FRAMEBUFFER, m_fbo);
+    glViewport(0, 0, m_width, m_height);
+}
+
 void GBuffer::bindForReading(Shader & shader) {
     glActiveTexture(GL_TEXTURE0); glBindTexture(GL_TEXTURE_2D, m_gDepth); shader.set("gDepth", 0);
 	glActiveTexture(GL_TEXTURE1); glBindTexture(GL_TEXTURE_2D, m_gAlbedo); shader.set("gAlbedo", 1);

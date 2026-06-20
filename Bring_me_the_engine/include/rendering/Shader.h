@@ -27,6 +27,7 @@ public:
      * @param geometryPath Chemin vers le fichier geometry shader (optionnel).
      */
     Shader(const std::string & vertexPath, const std::string & fragmentPath, const std::string & geometryPath = "");
+    Shader(const std::string& computePath);
 
     /**
      * @brief Destructeur.

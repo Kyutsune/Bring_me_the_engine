@@ -17,6 +17,7 @@ public:
     void release();
 
     void bindForWriting();
+    void bindForWritingWithNoClear();
     void bindForReading(Shader & shader);
 
     GLuint getAlbedoTexture() const { return m_gAlbedo; }

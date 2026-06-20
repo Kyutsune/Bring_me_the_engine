@@ -1,0 +1,71 @@
+#version 430
+layout(local_size_x = 128) in;
+
+struct Particle {
+    vec4 position;
+    vec4 velocity;
+};
+
+layout(std430, binding = 0) buffer InBuffer { Particle particles[]; } inBuf;
+layout(std430, binding = 1) buffer OutBuffer { Particle particles[]; } outBuf;
+
+uniform float smoothingRadius;
+uniform float stiffness;
+uniform float restDensity;
+uniform float viscosity;
+uniform float particleMass;
+uniform float dt;
+uniform float gravity;
+uniform vec3 boxMin;
+uniform vec3 boxMax;
+uniform int particleCount;
+
+void main() {
+    uint id = gl_GlobalInvocationID.x;
+    if (id >= particleCount) return;
+
+    vec3 posI = inBuf.particles[id].position.xyz;
+    vec3 velI = inBuf.particles[id].velocity.xyz;
+    float densityI = inBuf.particles[id].position.w;
+
+    float h = smoothingRadius;
+    float h2 = h * h;
+    float coeff_global = 1.0 / (3.14159265 * h2 * h2);
+    
+    vec3 accel_interaction = vec3(0.0);
+
+    for (int j = 0; j < particleCount; j++) {
+        if (id == j) continue;
+
+        vec3 posJ = inBuf.particles[j].position.xyz;
+        vec3 p_ij = posI - posJ;
+        float r2 = dot(p_ij, p_ij);
+
+        if (r2 < h2 && r2 > 0.00001) {
+            float r = sqrt(r2);
+            float force_repulsion = 10000.0 * (h - r); 
+            vec3 dir = p_ij / r;
+            accel_interaction += (dir * force_repulsion) / densityI;
+        }
+    }
+
+    vec3 acceleration = accel_interaction + vec3(0.0, gravity, 0.0);
+    vec3 newVel = velI + acceleration * dt;
+    vec3 newPos = posI + newVel * dt;
+
+    // Collisions avec rebond et epsilon de sécurité
+    float restitution = 0.5;
+    float eps = 0.001; 
+
+    if (newPos.x < boxMin.x) { newPos.x = boxMin.x + eps; newVel.x = -newVel.x * restitution; }
+    else if (newPos.x > boxMax.x) { newPos.x = boxMax.x - eps; newVel.x = -newVel.x * restitution; }
+    
+    if (newPos.y < boxMin.y) { newPos.y = boxMin.y + eps; newVel.y = -newVel.y * restitution; }
+    else if (newPos.y > boxMax.y) { newPos.y = boxMax.y - eps; newVel.y = -newVel.y * restitution; }
+    
+    if (newPos.z < boxMin.z) { newPos.z = boxMin.z + eps; newVel.z = -newVel.z * restitution; }
+    else if (newPos.z > boxMax.z) { newPos.z = boxMax.z - eps; newVel.z = -newVel.z * restitution; }
+
+    outBuf.particles[id].position = vec4(newPos, densityI);
+    outBuf.particles[id].velocity = vec4(newVel, 0.0);
+}

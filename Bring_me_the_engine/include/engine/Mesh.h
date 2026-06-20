@@ -31,6 +31,9 @@ public:
     /// Dessine le mesh avec les buffers OpenGL configurés
     void draw() const;
 
+    /// Dessine le mesh en utilisant l'instanciation OpenGL
+    void drawInstanced(int instanceCount) const;
+
     /// Ré-envoie les données des sommets au GPU (utile après modification CPU)
     void upload();
 

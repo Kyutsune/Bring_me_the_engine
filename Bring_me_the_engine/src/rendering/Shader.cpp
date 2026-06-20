@@ -56,6 +56,19 @@ Shader::Shader(const std::string & vertexPath, const std::string & fragmentPath,
     }
 }
 
+Shader::Shader(const std::string& computePath)
+{
+    std::string compCode = loadFile(computePath);
+
+    GLuint computeShader = compileShader(GL_COMPUTE_SHADER, compCode, computePath);
+
+    ID = glCreateProgram();
+    glAttachShader(ID, computeShader);
+    glLinkProgram(ID);
+
+    glDeleteShader(computeShader);
+}
+
 Shader::~Shader() {
     glDeleteProgram(ID);
 }
@@ -90,6 +103,8 @@ GLuint Shader::compileShader(GLenum type, const std::string & source, const std:
                   << infoLog << "\n"
                   <<"Here's the file:\n"
                   << source << "\n";
+
+        std::abort();
     }
     return shader;
 }
