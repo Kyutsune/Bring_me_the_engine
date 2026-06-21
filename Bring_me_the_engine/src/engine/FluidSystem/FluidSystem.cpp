@@ -44,9 +44,8 @@ void FluidSystem::update(float dt, const Scene & scene) {
             // Attention : l'SDFGenerator applique une marge de 10% (padding), 
             // il faut donc récupérer les mêmes bornes que ton SDFGenerator !
             AABB localBox = entity->getBoundingBox();
-            Vec3 size = localBox.m_max - localBox.m_min;
-            obs.boxMin = localBox.m_min - size * 0.1f;
-            obs.boxMax = localBox.m_max + size * 0.1f;
+            obs.boxMin = localBox.m_min;
+            obs.boxMax = localBox.m_max;
             
             obs.textureSlot = currentTextureSlot;
             obs.padding = 0.0f;

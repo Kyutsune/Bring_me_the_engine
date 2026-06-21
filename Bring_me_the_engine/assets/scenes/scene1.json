@@ -168,7 +168,7 @@
           0
         ]
       },
-      "generateSDF": true
+      "generateSDF": false
     },
     {
       "name": "Cube_tout_bleu",

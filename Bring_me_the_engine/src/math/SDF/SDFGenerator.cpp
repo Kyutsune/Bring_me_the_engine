@@ -66,11 +66,7 @@ float SDFGenerator::pointTriangleDistanceSq(const Vec3 & p, const Vec3 & a, cons
 std::vector<float> SDFGenerator::computeSDFGrid(const std::shared_ptr<Mesh> & mesh, int resX, int resY, int resZ, Vec3 & outBoxMin, Vec3 & outBoxMax) {
     AABB box = mesh->getBoundingBox();
 
-    // Marge de sécurité (padding) de 10%
     Vec3 size = box.m_max - box.m_min;
-    box.m_min -= size * 0.1f;
-    box.m_max += size * 0.1f;
-    size = box.m_max - box.m_min;
 
     outBoxMin = box.m_min;
     outBoxMax = box.m_max;
