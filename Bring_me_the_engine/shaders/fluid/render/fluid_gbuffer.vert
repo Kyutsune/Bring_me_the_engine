@@ -16,16 +16,24 @@ uniform mat4 viewMatrix;
 uniform mat4 projectionMatrix;
 uniform float particleRadius;
 
+uniform bool isObstacleMode;
+uniform vec3 obstaclePos;
+uniform float obstacleRadius;
+
 out vec3 vNormal;
 
 void main() {
-    // Récupération de la position de la particule courante via l'ID de l'instance
-    vec3 particlePos = inBuf.particles[gl_InstanceID].position.xyz;
+    vec3 worldPos;
+    if (isObstacleMode) {
+        // Mode Obstacle : On utilise les coordonnées de la sphère fixe
+        worldPos = (aPos * obstacleRadius) + obstaclePos;
+    } else {
+        // Mode Fluide : Récupération classique via l'ID de l'instance [cite: 40]
+        vec3 particlePos = inBuf.particles[gl_InstanceID].position.xyz;
+        worldPos = (aPos * particleRadius) + particlePos;
+    }
 
-    // On applique le rayon de la particule et on la décale dans le monde
-    vec3 worldPos = (aPos * particleRadius) + particlePos;
-
-    vNormal = aNormal; // Pas besoin de matrice model complexe pour une sphère uniforme
-
+    vNormal = aNormal;
+    
     gl_Position = projectionMatrix * viewMatrix * vec4(worldPos, 1.0);
 }

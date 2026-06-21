@@ -6,19 +6,36 @@ struct Particle {
     vec4 velocity; // xyz: vél, w: pression (inutilisé ici)
 };
 
-layout(std430, binding = 0) buffer InBuffer { Particle particles[]; } inBuf;
-layout(std430, binding = 1) buffer OutBuffer { Particle particles[]; } outBuf;
+struct Obstacle {
+    vec3 position;
+    int type;
+    vec3 size;
+    float padding;
+};
+
+layout(std430, binding = 0) buffer InBuffer {
+    Particle particles[];
+} inBuf;
+layout(std430, binding = 1) buffer OutBuffer {
+    Particle particles[];
+} outBuf;
+layout(std430, binding = 2) buffer ObstacleBuffer {
+    Obstacle obstacles[];
+};
 
 uniform float smoothingRadius;
 uniform float stiffness; // Équivalent au "bulk"
-uniform float restDensity; // Équivalent au "rho0" 
+uniform float restDensity; // Équivalent au "rho0"
 uniform float viscosity; // Équivalent au "visco"
 uniform float particleMass;
 uniform float dt;
+uniform float particleRadius;
 uniform float gravity;
 uniform vec3 boxMin;
 uniform vec3 boxMax;
 uniform int particleCount;
+
+uniform int obstacleCount;
 
 void main() {
     uint id = gl_GlobalInvocationID.x;
@@ -31,9 +48,9 @@ void main() {
     float h = smoothingRadius;
     float h2 = h * h;
     float pi = 3.14159265;
-    
+
     float coeff_global = 1.0 / (pi * (h2 * h2));
-    
+
     vec3 accel_interaction = vec3(0.0);
 
     for (int j = 0; j < particleCount; j++) {
@@ -49,7 +66,7 @@ void main() {
         if (r2 < h2 && r2 > 0.00001) {
             float r = sqrt(r2);
             float q = r / h;
-            
+
             vec3 v_ij = velI - velJ;
             float one_minus_q = 1.0 - q;
             float safe_q = max(q, 0.01);
@@ -62,7 +79,7 @@ void main() {
             float facteur_commun = one_minus_q * coeff_global;
 
             vec3 f_interact_ij = (particleMass / densityJ) * facteur_commun * parenthese;
-            
+
             accel_interaction += f_interact_ij / densityI;
         }
     }
@@ -73,17 +90,116 @@ void main() {
     vec3 newPos = posI + newVel * dt;
 
     // Collisions avec les frontières (restitution)
-    float restitution = 0.5; 
+    float restitution = 0.5;
     float eps = 0.001;
 
-    if (newPos.x < boxMin.x) { newPos.x = boxMin.x + eps; newVel.x = -newVel.x * restitution; }
-    else if (newPos.x > boxMax.x) { newPos.x = boxMax.x - eps; newVel.x = -newVel.x * restitution; }
-    
-    if (newPos.y < boxMin.y) { newPos.y = boxMin.y + eps; newVel.y = -newVel.y * restitution; }
-    else if (newPos.y > boxMax.y) { newPos.y = boxMax.y - eps; newVel.y = -newVel.y * restitution; }
-    
-    if (newPos.z < boxMin.z) { newPos.z = boxMin.z + eps; newVel.z = -newVel.z * restitution; }
-    else if (newPos.z > boxMax.z) { newPos.z = boxMax.z - eps; newVel.z = -newVel.z * restitution; }
+    if (newPos.x < boxMin.x) {
+        newPos.x = boxMin.x + eps;
+        newVel.x = -newVel.x * restitution;
+    }
+    else if (newPos.x > boxMax.x) {
+        newPos.x = boxMax.x - eps;
+        newVel.x = -newVel.x * restitution;
+    }
+
+    if (newPos.y < boxMin.y) {
+        newPos.y = boxMin.y + eps;
+        newVel.y = -newVel.y * restitution;
+    }
+    else if (newPos.y > boxMax.y) {
+        newPos.y = boxMax.y - eps;
+        newVel.y = -newVel.y * restitution;
+    }
+
+    if (newPos.z < boxMin.z) {
+        newPos.z = boxMin.z + eps;
+        newVel.z = -newVel.z * restitution;
+    }
+    else if (newPos.z > boxMax.z) {
+        newPos.z = boxMax.z - eps;
+        newVel.z = -newVel.z * restitution;
+    }
+
+    // -------------------------------------------------------------
+    // GESTION DES COLLISIONS AVEC LES OBSTACLES DE LA SCÈNE
+    // -------------------------------------------------------------
+    for (int k = 0; k < obstacleCount; k++) {
+        Obstacle obs = obstacles[k];
+
+        if (obs.type == 0) { // SPHÈRE
+            float obstacleRadius = obs.size.x;
+            float collisionDistance = obstacleRadius + particleRadius;
+
+            vec3 toParticle = newPos - obs.position;
+            float dist = length(toParticle);
+
+            // Si la particule pénètre la sphère
+            if (dist < collisionDistance + eps) {
+                vec3 normal = (dist > 0.00001) ? toParticle / dist : vec3(0.0, 1.0, 0.0);
+
+                // Repositionnement à la surface de l'obstacle
+                newPos = obs.position + normal * (collisionDistance + eps);
+
+                float normalVel = dot(newVel, normal);
+                vec3 vNormal = normal * normalVel;
+                vec3 vTangente = newVel - vNormal;
+
+                // On inverse et amortit la vitesse normale (le rebond)
+                // On applique une friction sur la trajectoire de glissement
+                float frictionTangente = 0.98;
+
+                if (normalVel < 0.0) {
+                    vNormal = -vNormal * restitution;
+                }
+                newVel = vNormal + (vTangente * frictionTangente);
+            }
+        }
+        else if (obs.type == 1) { // BOÎTE (AABB)
+            // obs.size contient les half-extents (demi-dimensions du cube)
+            vec3 bMin = obs.position - obs.size;
+            vec3 bMax = obs.position + obs.size;
+
+            // Vérification si la particule est à l'intérieur de l'AABB
+            if (newPos.x > bMin.x && newPos.x < bMax.x &&
+                    newPos.y > bMin.y && newPos.y < bMax.y &&
+                    newPos.z > bMin.z && newPos.z < bMax.z) {
+
+                // Trouver la face la plus proche pour éjecter la particule
+                vec3 distToMin = newPos - bMin;
+                vec3 distToMax = bMax - newPos;
+
+                float minDist = min(min(min(distToMin.x, distToMax.x), min(distToMin.y, distToMax.y)), min(distToMin.z, distToMax.z));
+                vec3 normal = vec3(0.0);
+
+                if (minDist == distToMin.x) {
+                    newPos.x = bMin.x - eps;
+                    normal = vec3(-1.0, 0.0, 0.0);
+                }
+                else if (minDist == distToMax.x) {
+                    newPos.x = bMax.x + eps;
+                    normal = vec3(1.0, 0.0, 0.0);
+                }
+                else if (minDist == distToMin.y) {
+                    newPos.y = bMin.y - eps;
+                    normal = vec3(0.0, -1.0, 0.0);
+                }
+                else if (minDist == distToMax.y) {
+                    newPos.y = bMax.y + eps;
+                    normal = vec3(0.0, 1.0, 0.0);
+                }
+                else if (minDist == distToMin.z) {
+                    newPos.z = bMin.z - eps;
+                    normal = vec3(0.0, 0.0, -1.0);
+                }
+                else if (minDist == distToMax.z) {
+                    newPos.z = bMax.z + eps;
+                    normal = vec3(0.0, 0.0, 1.0);
+                }
+
+                newVel = reflect(newVel, normal) * restitution;
+            }
+        }
+    }
 
     // Écriture dans le OutBuffer
     outBuf.particles[id].position = vec4(newPos, densityI);

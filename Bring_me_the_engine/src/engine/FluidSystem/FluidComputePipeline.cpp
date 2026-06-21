@@ -1,6 +1,8 @@
 #include "engine/FluidSystem/FluidComputePipeline.h"
 #include "system/PathResolver.h"
 
+#include "engine/FluidSystem/FluidSystem.h"
+
 void FluidComputePipeline::init(ParticleBuffer & buffer) {
     m_buffer = &buffer;
     m_densityShader = std::make_unique<Shader>(PathResolver::getResourcePath("shaders/fluid/compute/density.comp"));
@@ -8,7 +10,7 @@ void FluidComputePipeline::init(ParticleBuffer & buffer) {
     std::cout << PathResolver::getResourcePath("shaders/fluid/compute/integrate.comp") << std::endl;
 }
 
-void FluidComputePipeline::integrate(float dt, const FluidConfig & config) {
+void FluidComputePipeline::integrate(float dt, const FluidConfig & config,  const ObstacleBuffer& obstacleBuffer) {
     int count = m_buffer->getCount();
     int numGroups = (count + 127) / 128;
 
@@ -38,11 +40,18 @@ void FluidComputePipeline::integrate(float dt, const FluidConfig & config) {
     m_integrateShader->set("viscosity", config.viscosity);
     m_integrateShader->set("particleMass", config.particleMass);
     m_integrateShader->set("dt", dt);
+    m_integrateShader->set("particleRadius", config.particleRadius);
     m_integrateShader->set("gravity", config.gravity);
     m_integrateShader->set("particleCount", count);
 
     m_integrateShader->set("boxMin", config.boxMin);
     m_integrateShader->set("boxMax", config.boxMax);
+
+
+    // Paramètres du ssbo d'obstacles
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, obstacleBuffer.ssbo);
+    m_integrateShader->set("obstacleCount", static_cast<int>(obstacleBuffer.obstacles.size()));
+
 
     glDispatchCompute(numGroups, 1, 1);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);

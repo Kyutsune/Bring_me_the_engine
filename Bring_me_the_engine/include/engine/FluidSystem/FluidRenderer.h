@@ -1,8 +1,9 @@
 #pragma once
-#include "engine/Mesh.h"
-#include "rendering/Shader.h"
 #include "camera/Camera.h"
 #include "engine/FluidSystem/ParticleBuffer.h"
+#include "engine/FluidSystem/ObstacleFluid.h"
+#include "engine/Mesh.h"
+#include "rendering/Shader.h"
 #include <memory>
 
 class FluidRenderer {
@@ -11,7 +12,7 @@ public:
     ~FluidRenderer() = default;
 
     void init();
-    void render(const ParticleBuffer& buffer, const Camera& cam, const Mat4& projection);
+    void render(const ParticleBuffer & buffer, const ObstacleBuffer & obstacles, const Camera & cam, const Mat4 & projection);
 
     void setParticleRadius(float radius);
 
