@@ -1,12 +1,12 @@
 #include "engine/SceneLoader/ScenePreloaded.h"
+#include "Globals.h"
 #include "engine/Mesh.h"
+#include "engine/MeshLoader/MeshLoaderObj.h"
 #include "geometry/Cube.h"
 #include "geometry/Floor.h"
 #include "geometry/Sphere.h"
 #include "rendering/GestionTextures/TextureManager.h"
 #include "system/PathResolver.h"
-#include "engine/MeshLoader/MeshLoaderObj.h"
-#include "Globals.h"
 #include <fstream>
 
 #include "../external/json/json.hpp"
@@ -48,7 +48,7 @@ namespace scenePreloaded {
         std::shared_ptr<Mesh> lightMesh = createSphere<std::shared_ptr<Mesh>>(0.5f, 36, 18, Color::white());
         for (const Light & light : lightingManager.getLights()) {
             Mat4 lightTransform = Mat4::Scale(Vec3(0.1f, 0.1f, 0.1f)) * Mat4::Translation(light.getPosition());
-            std::shared_ptr<Entity> lightEntity = std::make_shared<Entity>(lightTransform, lightMesh);
+            std::shared_ptr<Entity> lightEntity = std::make_shared<Entity>(lightTransform, lightMesh, false);
             lightEntities.emplace_back(lightEntity);
         }
 
@@ -59,8 +59,7 @@ namespace scenePreloaded {
             PathResolver::getResourcePath("assets/cubemap/Nuit_bleue/bottom.jpg"),
             PathResolver::getResourcePath("assets/cubemap/Nuit_bleue/top.jpg"),
             PathResolver::getResourcePath("assets/cubemap/Nuit_bleue/front.jpg"),
-            PathResolver::getResourcePath("assets/cubemap/Nuit_bleue/back.jpg")
-        };
+            PathResolver::getResourcePath("assets/cubemap/Nuit_bleue/back.jpg")};
 
         skybox = std::make_unique<Skybox>(faces);
 
@@ -75,7 +74,7 @@ namespace scenePreloaded {
         std::shared_ptr<Material> cuivreMaterial = std::make_shared<Material>(cuivre_diffuse, cuivre_normal, cuivre_specular);
 
         std::shared_ptr<Entity> cube_qui_tourne = std::make_shared<Entity>(
-            Mat4::identity(), cubeMesh, cuivreMaterial, "Cube_qui_tourne");
+            Mat4::identity(), cubeMesh, true, cuivreMaterial, "Cube_qui_tourne");
 
         cube_qui_tourne->getBoundingBox().setupBBoxBuffers();
 
@@ -84,7 +83,7 @@ namespace scenePreloaded {
         // Cube tout bleu
         std::shared_ptr<Mesh> cubeMesh2 = createCube<std::shared_ptr<Mesh>>(Color::rose());
         Mat4 t2 = Mat4::Translation(Vec3(1, 0, -5));
-        std::shared_ptr<Entity> Cube_tout_bleu = std::make_shared<Entity>(t2, cubeMesh2,
+        std::shared_ptr<Entity> Cube_tout_bleu = std::make_shared<Entity>(t2, cubeMesh2, true,
                                                                           "",
                                                                           "",
                                                                           "",
@@ -100,7 +99,7 @@ namespace scenePreloaded {
         std::shared_ptr<Material> boisMaterial = std::make_shared<Material>(bois_diffuse, nullptr, nullptr);
 
         std::shared_ptr<Entity> Cube_plein_de_texture = std::make_shared<Entity>(
-            t4, cubeMesh3, boisMaterial, "Cube_plein_de_texture");
+            t4, cubeMesh3, true, boisMaterial, "Cube_plein_de_texture");
 
         Cube_plein_de_texture->getBoundingBox().setupBBoxBuffers();
         entities.emplace_back(Cube_plein_de_texture);
@@ -113,7 +112,7 @@ namespace scenePreloaded {
         std::shared_ptr<Material> solMaterial = std::make_shared<Material>(sol_diffuse, sol_normal, nullptr);
 
         std::shared_ptr<Entity> sol_beton = std::make_shared<Entity>(
-            Mat4::identity(), floorMesh, solMaterial, "Sol_beton");
+            Mat4::identity(), floorMesh, true, solMaterial, "Sol_beton");
 
         sol_beton->getBoundingBox().setupBBoxBuffers();
         entities.emplace_back(sol_beton);
@@ -128,7 +127,7 @@ namespace scenePreloaded {
         std::shared_ptr<Material> sphereMaterial = std::make_shared<Material>(sphere_diffuse, sphere_normal, sphere_specular);
 
         std::shared_ptr<Entity> sphere = std::make_shared<Entity>(
-            t5, sphereMesh, sphereMaterial, "Sphere_toute_texturee");
+            t5, sphereMesh, true, sphereMaterial, "Sphere_toute_texturee");
 
         sphere->getBoundingBox().setupBBoxBuffers();
         entities.emplace_back(sphere);
@@ -167,13 +166,13 @@ namespace scenePreloaded {
         std::shared_ptr<Mesh> lightMesh = createSphere<std::shared_ptr<Mesh>>(0.5f, 36, 18, Color::white());
         for (const Light & light : lightingManager.getLights()) {
             Mat4 lightTransform = Mat4::Scale(Vec3(0.1f, 0.1f, 0.1f)) * Mat4::Translation(light.getPosition());
-            std::shared_ptr<Entity> lightEntity = std::make_shared<Entity>(lightTransform, lightMesh);
+            std::shared_ptr<Entity> lightEntity = std::make_shared<Entity>(lightTransform, lightMesh, false);
             lightEntities.emplace_back(lightEntity);
         }
 
         std::shared_ptr<Mesh> floorMesh = createFloor<std::shared_ptr<Mesh>>(25.f, -1.f);
-        // auto sol_beton = std::make_shared<Entity>(t3, floorMesh, "../assets/sol/sol_cobble/sol_cobble.jpg", "../assets/sol/sol_cobble/sol_cobble_normal.jpg", "../assets/sol/sol_cobble/sol_cobble_specular.jpg");
-        std::shared_ptr<Entity> sol_beton = std::make_shared<Entity>(Mat4::identity(), floorMesh,
+        // auto sol_beton = std::make_shared<Entity>(t3, floorMesh, true, "../assets/sol/sol_cobble/sol_cobble.jpg", "../assets/sol/sol_cobble/sol_cobble_normal.jpg", "../assets/sol/sol_cobble/sol_cobble_specular.jpg");
+        std::shared_ptr<Entity> sol_beton = std::make_shared<Entity>(Mat4::identity(), floorMesh, true,
                                                                      PathResolver::getResourcePath("assets/sol/brique_recyclee/brique_recyclee_diffuse.jpg"),
                                                                      PathResolver::getResourcePath("assets/sol/brique_recyclee/brique_recyclee_normal.jpg"),
                                                                      "",
@@ -254,12 +253,12 @@ namespace scenePreloaded {
         std::shared_ptr<Mesh> lightMesh = createSphere<std::shared_ptr<Mesh>>(g_lightSize, 36, 18, Color::white());
         for (const Light & light : lightingManager.getLights()) {
             Mat4 lightTransform = Mat4::Scale(Vec3(0.1f, 0.1f, 0.1f)) * Mat4::Translation(light.getPosition());
-            std::shared_ptr<Entity> lightEntity = std::make_shared<Entity>(lightTransform, lightMesh, std::shared_ptr<Material>(nullptr), "Light_" + std::to_string(lightEntities.size()));
-			if (light.getType() == LightType::LIGHT_DIRECTIONAL) {
+            std::shared_ptr<Entity> lightEntity = std::make_shared<Entity>(lightTransform, lightMesh, false, std::shared_ptr<Material>(nullptr), "Light_" + std::to_string(lightEntities.size()));
+            if (light.getType() == LightType::LIGHT_DIRECTIONAL) {
                 lightEntity->setName("Light_Directionnal" + std::to_string(lightEntities.size()));
                 updatePerformanceStatsOnRemovedEntity(*lightEntity);
             }
-            //TODO: Trouver un moyen plus malin de nommage, car lightEntities comprend aussi les directionnelles
+            // TODO: Trouver un moyen plus malin de nommage, car lightEntities comprend aussi les directionnelles
             lightEntities.emplace_back(lightEntity);
         }
 
@@ -324,33 +323,30 @@ namespace scenePreloaded {
                     GLint filterMode;
                     if (filterStr == "nearest") {
                         filterMode = GL_NEAREST; // Pour les Atlas (pas de mipmaps, pixel net)
-                    }
-                    else if (filterStr == "linear") {
+                    } else if (filterStr == "linear") {
                         filterMode = GL_LINEAR_MIPMAP_LINEAR; // Pour le sol (lisse au loin)
-                    }
-                    else {
+                    } else {
                         filterMode = GL_NEAREST_MIPMAP_NEAREST; // Option intermédiaire si besoin
                     }
 
                     bool flip = e["material"].value("flip", true);
 
                     // Passage des réglages au TextureManager
-                    std::shared_ptr<Texture> d = diffuse.empty() ? nullptr :
-                        TextureManager::load(PathResolver::getResourcePath(diffuse), wrapMode, filterMode, flip);
+                    std::shared_ptr<Texture> d = diffuse.empty() ? nullptr : TextureManager::load(PathResolver::getResourcePath(diffuse), wrapMode, filterMode, flip);
 
                     // Pour les normales et specular, on utilise souvent LINEAR et REPEAT par défaut
-                    std::shared_ptr<Texture> n = normal.empty() ? nullptr :
-                        TextureManager::load(PathResolver::getResourcePath(normal), GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR, false);
+                    std::shared_ptr<Texture> n = normal.empty() ? nullptr : TextureManager::load(PathResolver::getResourcePath(normal), GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR, false);
 
-                    std::shared_ptr<Texture> s = specular.empty() ? nullptr :
-                        TextureManager::load(PathResolver::getResourcePath(specular), GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR, false);
+                    std::shared_ptr<Texture> s = specular.empty() ? nullptr : TextureManager::load(PathResolver::getResourcePath(specular), GL_REPEAT, GL_LINEAR_MIPMAP_LINEAR, false);
 
                     material = std::make_shared<Material>(d, n, s);
                 }
 
+                bool generateSDF = e.value("generateSDF", true);
+
                 std::string name = e.value("name", "Unnamed");
 
-                std::shared_ptr<Entity> entity = std::make_shared<Entity>(transform, mesh, material, name);
+                std::shared_ptr<Entity> entity = std::make_shared<Entity>(transform, mesh, generateSDF, material, name);
                 entity->getBoundingBox().setupBBoxBuffers();
                 entities.emplace_back(entity);
             }

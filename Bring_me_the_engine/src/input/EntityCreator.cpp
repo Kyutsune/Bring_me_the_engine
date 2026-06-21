@@ -30,7 +30,7 @@ std::shared_ptr<Entity> EntityCreator::createCubeAndPlace(const double & x, cons
     std::shared_ptr<Material> t_boisMaterial = std::make_shared<Material>(nullptr, nullptr, nullptr);
     std::string t_name = getNameOfEntityCreated(TypeEntityCreated::Cube);
     std::shared_ptr<Entity> cubeFinal = std::make_shared<Entity>(
-        t_translation, t_cubeMesh, t_boisMaterial, t_name);
+        t_translation, t_cubeMesh, true, t_boisMaterial, t_name);
 
     cubeFinal->getBoundingBox().setupBBoxBuffers();
     getScene().getEntities().emplace_back(cubeFinal);
@@ -42,7 +42,7 @@ std::shared_ptr<Entity> EntityCreator::createSphereAndPlace(const double & x, co
     std::shared_ptr<Material> t_boisMaterial = std::make_shared<Material>(nullptr, nullptr, nullptr);
     std::string t_name = getNameOfEntityCreated(TypeEntityCreated::Sphere);
     std::shared_ptr<Entity> sphereFinal = std::make_shared<Entity>(
-        t_translation, t_sphereMesh, t_boisMaterial, t_name);
+        t_translation, t_sphereMesh, true, t_boisMaterial, t_name);
 
     sphereFinal->getBoundingBox().setupBBoxBuffers();
     getScene().getEntities().emplace_back(sphereFinal);

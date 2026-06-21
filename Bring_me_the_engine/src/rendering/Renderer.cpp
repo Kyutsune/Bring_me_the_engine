@@ -170,7 +170,7 @@ void Renderer::renderFrame(const Scene & scene) {
     m_shadowRenderTimer.stop();
 
     // Mise à jour du système de fluides
-    m_fluidSystem->update(0.001f);
+    m_fluidSystem->update(0.001f, scene);
 
     // Rendu principal
     m_sceneRenderTimer.start();

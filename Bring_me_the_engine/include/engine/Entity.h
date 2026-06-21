@@ -4,6 +4,7 @@
 #include "Mesh.h"
 #include "math/PlaneBoundingVolume.h"
 #include "math/Quat.h"
+#include "math/SDF/SDFVolume.h"
 #include "math/Vec.h"
 #include "rendering/Shader.h"
 #include <filesystem>
@@ -39,14 +40,12 @@ struct TempSubMeshData {
     AABB box;
 };
 
-
 // Structure pour stocker une sous partie du maillage
 struct SubMesh {
     Material material;
     std::vector<SpatialCell> gridChunks;
     AABB subMeshAABB;
 };
-
 
 /**
  * @class Entity
@@ -66,12 +65,13 @@ public:
      *
      * @param transform Matrice initiale de transformation
      * @param mesh Mesh associé à l'entité
+     * @param generateSDF Indique si un SDF doit être généré pour le mesh
      * @param filenameTextDiffuse Chemin vers la texture diffuse
      * @param filenameNormalMap Chemin vers la normal map
      * @param filenameSpecularMap Chemin vers la specular map
      * @param name Nom de l'entité
      */
-    Entity(const Mat4 & transform, std::shared_ptr<Mesh> mesh,
+    Entity(const Mat4 & transform, std::shared_ptr<Mesh> mesh, const bool & generateSDF,
            const std::string & filenameTextDiffuse = "",
            const std::string & filenameNormalMap = "",
            const std::string & filenameSpecularMap = "",
@@ -85,7 +85,7 @@ public:
      * @param material Matériau de l'entité
      * @param name Nom de l'entité
      */
-    Entity(const Mat4 & transform, std::shared_ptr<Mesh> mesh,
+    Entity(const Mat4 & transform, std::shared_ptr<Mesh> mesh, const bool & generateSDF,
            std::shared_ptr<Material> material,
            const std::string & name = "");
 
@@ -98,9 +98,8 @@ public:
     Mat4 & getTransform() { return m_transform; }
     void setTransform(const Mat4 & newTransform);
 
-    Material& getMaterial(size_t index = 0) { return m_subMeshes.at(index).material; }
-    const Material& getMaterial(size_t index = 0) const { return m_subMeshes.at(index).material; }
-
+    Material & getMaterial(size_t index = 0) { return m_subMeshes.at(index).material; }
+    const Material & getMaterial(size_t index = 0) const { return m_subMeshes.at(index).material; }
 
     bool isVisible() const { return visible; }
     void setVisible(bool v) { visible = v; }
@@ -125,14 +124,14 @@ public:
     }
 
     Vec3 getBaseColor() const { return m_subMeshes.at(0).material.m_baseColor; }
-    void setBaseColor(const Vec3& color) {
-        for (auto& sub : m_subMeshes) {
+    void setBaseColor(const Vec3 & color) {
+        for (auto & sub : m_subMeshes) {
             sub.material.m_baseColor = color;
         }
     }
 
     bool doItUseTextureDiffuse() const {
-        for (const auto& sub : m_subMeshes) {
+        for (const auto & sub : m_subMeshes) {
             if (sub.material.m_useDiffuse) {
                 return true;
             }
@@ -141,45 +140,48 @@ public:
     }
 
     bool hasTextureDiffuse() const {
-        for (const auto& sub : m_subMeshes) {
-            if (sub.material.m_diffuseTexture != nullptr) return true;
+        for (const auto & sub : m_subMeshes) {
+            if (sub.material.m_diffuseTexture != nullptr)
+                return true;
         }
         return false;
     }
 
-	bool doItUseNormalMap() const { 
-        for (const auto& sub : m_subMeshes) {
+    bool doItUseNormalMap() const {
+        for (const auto & sub : m_subMeshes) {
             if (sub.material.m_useNormal) {
                 return true;
             }
         }
-		return false;
+        return false;
     }
-	bool hasNormalMap() const { 
-        for (const auto& sub : m_subMeshes) {
-            if (sub.material.m_normalMap != nullptr) return true;
+    bool hasNormalMap() const {
+        for (const auto & sub : m_subMeshes) {
+            if (sub.material.m_normalMap != nullptr)
+                return true;
         }
-		return false;
+        return false;
     }
-    
-	bool doItUseSpecularMap() const { 
-        for (const auto& sub : m_subMeshes) {
+
+    bool doItUseSpecularMap() const {
+        for (const auto & sub : m_subMeshes) {
             if (sub.material.m_useSpecular) {
                 return true;
             }
-		}
-		return false;
+        }
+        return false;
     }
-	bool hasSpecularMap() const {
-        for (const auto& sub : m_subMeshes) {
-            if (sub.material.m_specularMap != nullptr) return true;
-		}
-		return false;
+    bool hasSpecularMap() const {
+        for (const auto & sub : m_subMeshes) {
+            if (sub.material.m_specularMap != nullptr)
+                return true;
+        }
+        return false;
     }
 
     // --- Fonctionnalités ---
     /**
-	 * @deprecated depuis qu'on utilise le deferred
+     * @deprecated depuis qu'on utilise le deferred
      * @brief Dessine l'entité avec un shader donné
      *
      * @param shader Shader utilisé pour le rendu
@@ -209,9 +211,13 @@ public:
 
     std::vector<SpatialCell> splitSpecificMeshIntoGrid(std::shared_ptr<Mesh> mesh, int gridRes);
 
-    const std::vector<SubMesh>& getSubMeshes() const { return m_subMeshes; }
+    const std::vector<SubMesh> & getSubMeshes() const { return m_subMeshes; }
 
-    void addSubMesh(std::shared_ptr<Mesh> mesh, const Material& mat);
+    void addSubMesh(std::shared_ptr<Mesh> mesh, const Material & mat);
+
+    inline bool hasSDF() const { return m_sdfVolume != nullptr; }
+    inline std::shared_ptr<SDFVolume> getSDFVolume() const { return m_sdfVolume; }
+    inline void setSDFVolume(std::shared_ptr<SDFVolume> sdf) { m_sdfVolume = sdf; }
 
 private:
     std::string m_entity_name;
@@ -219,14 +225,12 @@ private:
     std::vector<SubMesh> m_subMeshes;
 
     AABB m_boundingBox;
-
-
+    std::shared_ptr<SDFVolume> m_sdfVolume = nullptr;
 
     Vec3 m_position = Vec3(0.0f);
     Quat m_rotation = Quat::identity();
     Vec3 m_scale = Vec3(1.0f, 1.0f, 1.0f);
     Mat4 m_transform;
-
 
     bool visible = false;
 };

@@ -7,10 +7,11 @@ struct Particle {
 };
 
 struct Obstacle {
-    vec3 position;
-    int type;
-    vec3 size;
-    float padding;
+    mat4 inverseModelMatrix; // Permet de passer du Monde -> Local de l'objet
+    vec3 boxMin; // Borne min locale de la texture (padding inclus)
+    int textureSlot; // Index du sampler 3D correspondant dans u_sdfTextures
+    vec3 boxMax; // Borne max locale de la texture (padding inclus)
+    float padding; // Alignement
 };
 
 layout(std430, binding = 0) buffer InBuffer {
@@ -22,6 +23,8 @@ layout(std430, binding = 1) buffer OutBuffer {
 layout(std430, binding = 2) buffer ObstacleBuffer {
     Obstacle obstacles[];
 };
+
+layout(binding = 4) uniform sampler3D u_sdfTextures[8];
 
 uniform float smoothingRadius;
 uniform float stiffness; // Équivalent au "bulk"
@@ -126,77 +129,61 @@ void main() {
     for (int k = 0; k < obstacleCount; k++) {
         Obstacle obs = obstacles[k];
 
-        if (obs.type == 0) { // SPHÈRE
-            float obstacleRadius = obs.size.x;
-            float collisionDistance = obstacleRadius + particleRadius;
+        // On projette la position Monde de la particule dans l'espace Local de l'objet
+        vec4 localPos = obs.inverseModelMatrix * vec4(newPos, 1.0);
+        vec3 pLocal = localPos.xyz;
 
-            vec3 toParticle = newPos - obs.position;
-            float dist = length(toParticle);
+        // Étape A : On vérifie par un test AABB rapide si on est dans la zone de la SDF locale
+        if (pLocal.x >= obs.boxMin.x && pLocal.x <= obs.boxMax.x &&
+                pLocal.y >= obs.boxMin.y && pLocal.y <= obs.boxMax.y &&
+                pLocal.z >= obs.boxMin.z && pLocal.z <= obs.boxMax.z) {
 
-            // Si la particule pénètre la sphère
-            if (dist < collisionDistance + eps) {
-                vec3 normal = (dist > 0.00001) ? toParticle / dist : vec3(0.0, 1.0, 0.0);
+            // Étape B : Transformation des coordonnées locales vers l'espace de mapping UVW [0, 1] de la texture 3D
+            vec3 sizeLocal = obs.boxMax - obs.boxMin;
+            vec3 uvw = (pLocal - obs.boxMin) / sizeLocal;
 
-                // Repositionnement à la surface de l'obstacle
-                newPos = obs.position + normal * (collisionDistance + eps);
+            // Échantillonnage de la distance signée la plus proche (SDF)
+            float distanceToSurface = texture(u_sdfTextures[obs.textureSlot], uvw).r;
 
-                float normalVel = dot(newVel, normal);
-                vec3 vNormal = normal * normalVel;
+            float meshEps = particleRadius * 0.2; // On tolère un petit chevauchement pour éviter les "collisions fantômes"
+
+            // Si la surface de la particule traverse la géométrie du Mesh
+            if (distanceToSurface < particleRadius + eps + meshEps) {
+
+                // Étape C : Calcul de la normale locale via le Gradient de la SDF
+                // On regarde les pas de variation autour du voxel courant
+                float delta = 0.01;
+                vec3 grad;
+                grad.x = texture(u_sdfTextures[obs.textureSlot], uvw + vec3(delta, 0.0, 0.0)).r - texture(u_sdfTextures[obs.textureSlot], uvw - vec3(delta, 0.0, 0.0)).r;
+                grad.y = texture(u_sdfTextures[obs.textureSlot], uvw + vec3(0.0, delta, 0.0)).r - texture(u_sdfTextures[obs.textureSlot], uvw - vec3(0.0, delta, 0.0)).r;
+                grad.z = texture(u_sdfTextures[obs.textureSlot], uvw + vec3(0.0, 0.0, delta)).r - texture(u_sdfTextures[obs.textureSlot], uvw - vec3(0.0, 0.0, delta)).r;
+
+                // Le gradient est toujours orienté vers l'extérieur du volume
+                vec3 localNormal = (length(grad) > 0.00001) ? normalize(grad) : vec3(0.0, 1.0, 0.0);
+
+                // Étape D : Éjection de la particule le long de la normale locale
+                float penetration = (particleRadius + eps + meshEps) - distanceToSurface;
+                pLocal += localNormal * penetration;
+
+                // On repasse la position corrigée dans l'espace Monde
+                newPos = (inverse(obs.inverseModelMatrix) * vec4(pLocal, 1.0)).xyz;
+
+                // Étape E : On repasse la normale locale dans l'espace Monde pour appliquer la physique
+                // On utilise la transposée de la matrice inverse (règle standard des normales)
+                // Comme inverseModelMatrix est l'inverse de Model, sa transposée fait l'affaire
+                vec3 worldNormal = normalize((vec4(localNormal, 0.0) * obs.inverseModelMatrix).xyz);
+
+                // Application de ton super code de glissement tangentiel avec friction
+                float normalVel = dot(newVel, worldNormal);
+                vec3 vNormal = worldNormal * normalVel;
                 vec3 vTangente = newVel - vNormal;
 
-                // On inverse et amortit la vitesse normale (le rebond)
-                // On applique une friction sur la trajectoire de glissement
                 float frictionTangente = 0.98;
 
                 if (normalVel < 0.0) {
                     vNormal = -vNormal * restitution;
                 }
                 newVel = vNormal + (vTangente * frictionTangente);
-            }
-        }
-        else if (obs.type == 1) { // BOÎTE (AABB)
-            // obs.size contient les half-extents (demi-dimensions du cube)
-            vec3 bMin = obs.position - obs.size;
-            vec3 bMax = obs.position + obs.size;
-
-            // Vérification si la particule est à l'intérieur de l'AABB
-            if (newPos.x > bMin.x && newPos.x < bMax.x &&
-                    newPos.y > bMin.y && newPos.y < bMax.y &&
-                    newPos.z > bMin.z && newPos.z < bMax.z) {
-
-                // Trouver la face la plus proche pour éjecter la particule
-                vec3 distToMin = newPos - bMin;
-                vec3 distToMax = bMax - newPos;
-
-                float minDist = min(min(min(distToMin.x, distToMax.x), min(distToMin.y, distToMax.y)), min(distToMin.z, distToMax.z));
-                vec3 normal = vec3(0.0);
-
-                if (minDist == distToMin.x) {
-                    newPos.x = bMin.x - eps;
-                    normal = vec3(-1.0, 0.0, 0.0);
-                }
-                else if (minDist == distToMax.x) {
-                    newPos.x = bMax.x + eps;
-                    normal = vec3(1.0, 0.0, 0.0);
-                }
-                else if (minDist == distToMin.y) {
-                    newPos.y = bMin.y - eps;
-                    normal = vec3(0.0, -1.0, 0.0);
-                }
-                else if (minDist == distToMax.y) {
-                    newPos.y = bMax.y + eps;
-                    normal = vec3(0.0, 1.0, 0.0);
-                }
-                else if (minDist == distToMin.z) {
-                    newPos.z = bMin.z - eps;
-                    normal = vec3(0.0, 0.0, -1.0);
-                }
-                else if (minDist == distToMax.z) {
-                    newPos.z = bMax.z + eps;
-                    normal = vec3(0.0, 0.0, 1.0);
-                }
-
-                newVel = reflect(newVel, normal) * restitution;
             }
         }
     }

@@ -12,33 +12,13 @@ void FluidRenderer::init() {
 }
 
 void FluidRenderer::render(const ParticleBuffer & buffer, const ObstacleBuffer & obstacles, const Camera & cam, const Mat4 & projection) {
+    if (buffer.getCount() == 0)
+        return;
+        
     m_shader->use();
 
     m_shader->set("viewMatrix", cam.getViewMatrix(), false);
     m_shader->set("projectionMatrix", projection, false);
-
-    // -----------------------------------------------------------------
-    // PASSE 1 : DESSIN DES OBSTACLES (Sphères analytiques)
-    // -----------------------------------------------------------------
-    // On désactive l'indexation par instance pour le mode obstacle
-    m_shader->set("isObstacleMode", true);
-    m_shader->set("fluidColor", Vec3(0.8f, 0.2f, 0.2f)); // Un rouge bien visible pour l'obstacle
-
-    for (const auto & obs : obstacles.obstacles) {
-        if (obs.type == 0) { // SPHÈRE
-            m_shader->set("obstaclePos", obs.position);
-            m_shader->set("obstacleRadius", obs.size.x); // Le rayon est stocké dans size.x
-
-            // On dessine une seule sphère classique
-            m_sphereMesh->draw();
-        }
-    }
-
-    // -----------------------------------------------------------------
-    // PASSE 2 : DESSIN DES PARTICULES FLUIDES
-    // -----------------------------------------------------------------
-    if (buffer.getCount() == 0)
-        return;
 
     m_shader->set("isObstacleMode", false);
 

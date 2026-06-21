@@ -98,6 +98,7 @@ struct Vec3 {
     float * ptr();
 
     float length() const;
+    float lengthSq() const;
     Vec3 normalized() const;
 
     /**

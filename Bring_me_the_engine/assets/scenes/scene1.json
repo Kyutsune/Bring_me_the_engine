@@ -116,7 +116,8 @@
           0,
           0
         ]
-      }
+      },
+      "generateSDF": true
     },
     {
       "name": "Bigguy",
@@ -138,7 +139,8 @@
           0,
           0
         ]
-      }
+      },
+      "generateSDF": true
     },
     {
       "name": "House",
@@ -165,7 +167,8 @@
           0,
           0
         ]
-      }
+      },
+      "generateSDF": true
     },
     {
       "name": "Cube_tout_bleu",
@@ -192,7 +195,8 @@
           0,
           0
         ]
-      }
+      },
+      "generateSDF": true
     },
     {
       "name": "Cube_plein_de_texture",
@@ -216,7 +220,8 @@
           0,
           0
         ]
-      }
+      },
+      "generateSDF": true
     },
     {
       "name": "Sol_beton",
@@ -241,7 +246,8 @@
           0,
           0
         ]
-      }
+      },
+      "generateSDF": true
     },
     {
       "name": "Sphere_toute_texturee",
@@ -272,7 +278,8 @@
           0,
           0
         ]
-      }
+      },
+      "generateSDF": true
     },
     {
       "name": "Arbre",
@@ -294,7 +301,8 @@
           49,
           0
         ]
-      }
+      },
+      "generateSDF": true
     }
   ]
 }

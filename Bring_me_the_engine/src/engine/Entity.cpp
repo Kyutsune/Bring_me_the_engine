@@ -1,16 +1,16 @@
 #include "engine/Entity.h"
 #include "Globals.h"
+#include "math/SDF/SDFGenerator.h"
 #include <algorithm>
 
 #include <algorithm>
 #include <map>
 
-Entity::Entity(const Mat4 & transform, std::shared_ptr<Mesh> mesh,
+Entity::Entity(const Mat4 & transform, std::shared_ptr<Mesh> mesh, const bool & generateSDF,
                const std::string & filenameTextDiffuse,
                const std::string & filenameNormalMap,
                const std::string & filenameSpecularMap,
                const std::string & name) {
-
 
     m_entity_name = name.empty() ? "Unnamed Entity" : name;
 
@@ -20,77 +20,78 @@ Entity::Entity(const Mat4 & transform, std::shared_ptr<Mesh> mesh,
         mat.m_useDiffuse = true;
     }
     if (!filenameNormalMap.empty() && std::filesystem::exists(filenameNormalMap)) {
-		mat.m_normalMap = std::make_shared<Texture>(filenameNormalMap);
-		mat.m_useNormal = true;
+        mat.m_normalMap = std::make_shared<Texture>(filenameNormalMap);
+        mat.m_useNormal = true;
     }
-    if(!filenameSpecularMap.empty() && std::filesystem::exists(filenameSpecularMap)) {
-        mat.m_specularMap =  std::make_shared<Texture>(filenameSpecularMap);
-		mat.m_useSpecular = true;
+    if (!filenameSpecularMap.empty() && std::filesystem::exists(filenameSpecularMap)) {
+        mat.m_specularMap = std::make_shared<Texture>(filenameSpecularMap);
+        mat.m_useSpecular = true;
     }
 
     mat.m_baseColor = g_selectedColor;
 
     if (mesh) {
+        if (generateSDF) {
+            m_sdfVolume = SDFGenerator::getOrGenerate(mesh, m_entity_name, 32, 32, 32);
+        }
         addSubMesh(mesh, mat);
     }
 
     setTransform(transform);
     updateTransform();
-	updatePerformanceStatsOnAddedEntity(*this);
+    updatePerformanceStatsOnAddedEntity(*this);
 }
 
-Entity::Entity(const Mat4 & transform, std::shared_ptr<Mesh> mesh,
+Entity::Entity(const Mat4 & transform, std::shared_ptr<Mesh> mesh, const bool & generateSDF,
                std::shared_ptr<Material> material,
                const std::string & name) {
     m_entity_name = name.empty() ? "Unnamed Entity" : name;
     if (mesh && material) {
+        if (generateSDF) {
+            m_sdfVolume = SDFGenerator::getOrGenerate(mesh, m_entity_name, 32, 32, 32);
+        }
         addSubMesh(mesh, *material);
     }
 
     setTransform(transform);
     updateTransform();
-	updatePerformanceStatsOnAddedEntity(*this);
+    updatePerformanceStatsOnAddedEntity(*this);
 }
-
 
 // deprecated depuis qu'on utilise le deferred
 void Entity::drawForward(Shader & shader, const Mat4 & view, const Mat4 & projection) {
     updateCameraUniforms(shader, m_transform, view, projection);
 
-
-    for (auto& sub : m_subMeshes) {
+    for (auto & sub : m_subMeshes) {
         // Bind du matériau du SubMesh
         if (sub.material.m_diffuseTexture && sub.material.m_useDiffuse) {
             shader.set("useTexture", 1);
             sub.material.m_diffuseTexture->bind(0);
-        }
-        else {
+        } else {
             shader.set("useTexture", 0);
         }
-        if(sub.material.m_normalMap && sub.material.m_useNormal) {
-			shader.set("useNormalMap", 1);
-			shader.set("texture_normal", 1);
-			sub.material.m_normalMap->bind(1);
+        if (sub.material.m_normalMap && sub.material.m_useNormal) {
+            shader.set("useNormalMap", 1);
+            shader.set("texture_normal", 1);
+            sub.material.m_normalMap->bind(1);
+        } else {
+            shader.set("useNormalMap", 0);
         }
-        else {
-			shader.set("useNormalMap", 0);
-        }
-		if (sub.material.m_specularMap && sub.material.m_useSpecular) {
+        if (sub.material.m_specularMap && sub.material.m_useSpecular) {
             shader.set("useSpecularMap", 1);
             shader.set("texture_specular", 2);
             sub.material.m_specularMap->bind(2);
-        }
-        else {
+        } else {
             shader.set("useSpecularMap", 0);
         }
 
         shader.set("baseColor", sub.material.m_baseColor);
         shader.set("useVertexColor", sub.material.m_useVertexColor);
 
-        for (auto& cell : sub.gridChunks) {
+        for (auto & cell : sub.gridChunks) {
             cell.mesh->draw();
         }
-    }   
+    }
 }
 
 void Entity::setTransform(const Mat4 & newTransform) {
@@ -108,17 +109,17 @@ void Entity::updateTransform() {
     m_transform = Mat4::Scale(m_scale) * m_rotation.toMat4() * Mat4::Translation(m_position);
 }
 
-
 std::vector<SpatialCell> Entity::splitSpecificMeshIntoGrid(std::shared_ptr<Mesh> mesh, int gridRes) {
     std::vector<SpatialCell> cells;
-    if (!mesh) return cells;
+    if (!mesh)
+        return cells;
 
-    const auto& sourceVertices = mesh->getVertices();
-    const auto& sourceIndices = mesh->getIndices();
+    const auto & sourceVertices = mesh->getVertices();
+    const auto & sourceIndices = mesh->getIndices();
     AABB globalBox = mesh->getBoundingBox();
 
     Vec3 size = globalBox.m_max - globalBox.m_min;
-    Vec3 cellSize = { size.x / gridRes, size.y / gridRes, size.z / gridRes };
+    Vec3 cellSize = {size.x / gridRes, size.y / gridRes, size.z / gridRes};
 
     std::map<int, TempSubMeshData> gridMap;
 
@@ -134,7 +135,7 @@ std::vector<SpatialCell> Entity::splitSpecificMeshIntoGrid(std::shared_ptr<Mesh>
         int iz = std::clamp(int((center.z - globalBox.m_min.z) / cellSize.z), 0, gridRes - 1);
         int cellID = ix + iy * gridRes + iz * gridRes * gridRes;
 
-        auto& data = gridMap[cellID];
+        auto & data = gridMap[cellID];
         unsigned int startIdx = (unsigned int)data.vertices.size();
         data.vertices.push_back(v1);
         data.vertices.push_back(v2);
@@ -144,7 +145,7 @@ std::vector<SpatialCell> Entity::splitSpecificMeshIntoGrid(std::shared_ptr<Mesh>
         data.indices.push_back(startIdx + 2);
     }
 
-    for (auto& [id, data] : gridMap) {
+    for (auto & [id, data] : gridMap) {
         SpatialCell cell;
         cell.mesh = std::make_shared<Mesh>(data.vertices, data.indices);
         cell.localAABB = cell.mesh->getBoundingBox();
@@ -153,8 +154,7 @@ std::vector<SpatialCell> Entity::splitSpecificMeshIntoGrid(std::shared_ptr<Mesh>
     return cells;
 }
 
-
-void Entity::addSubMesh(std::shared_ptr<Mesh> mesh, const Material& mat) {
+void Entity::addSubMesh(std::shared_ptr<Mesh> mesh, const Material & mat) {
     SubMesh sub;
     sub.material = mat;
     sub.subMeshAABB = mesh->getBoundingBox();
@@ -162,8 +162,7 @@ void Entity::addSubMesh(std::shared_ptr<Mesh> mesh, const Material& mat) {
     // On peut décider de découper en grille ici si le mesh est trop gros
     if (mesh->getNumberOfIndices() > 5000) {
         sub.gridChunks = splitSpecificMeshIntoGrid(mesh, 3);
-    }
-    else {
+    } else {
         // Sinon, une seule cellule qui contient tout le mesh
         SpatialCell cell;
         cell.mesh = mesh;

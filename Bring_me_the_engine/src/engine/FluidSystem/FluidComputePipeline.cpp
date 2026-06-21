@@ -10,7 +10,7 @@ void FluidComputePipeline::init(ParticleBuffer & buffer) {
     std::cout << PathResolver::getResourcePath("shaders/fluid/compute/integrate.comp") << std::endl;
 }
 
-void FluidComputePipeline::integrate(float dt, const FluidConfig & config,  const ObstacleBuffer& obstacleBuffer) {
+void FluidComputePipeline::integrate(float dt, const FluidConfig & config, const ObstacleBuffer & obstacleBuffer) {
     int count = m_buffer->getCount();
     int numGroups = (count + 127) / 128;
 
@@ -47,11 +47,11 @@ void FluidComputePipeline::integrate(float dt, const FluidConfig & config,  cons
     m_integrateShader->set("boxMin", config.boxMin);
     m_integrateShader->set("boxMax", config.boxMax);
 
-
     // Paramètres du ssbo d'obstacles
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, obstacleBuffer.ssbo);
     m_integrateShader->set("obstacleCount", static_cast<int>(obstacleBuffer.obstacles.size()));
-
+    int textureIndices[8] = {4, 5, 6, 7, 8, 9, 10, 11};
+    glUniform1iv(glGetUniformLocation(m_integrateShader->ID, "u_sdfTextures"), 8, textureIndices);
 
     glDispatchCompute(numGroups, 1, 1);
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
