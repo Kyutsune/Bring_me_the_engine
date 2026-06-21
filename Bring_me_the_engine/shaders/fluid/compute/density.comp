@@ -22,9 +22,10 @@ void main() {
     float h = smoothingRadius;
     float h2 = h * h;
     float h8 = h2 * h2 * h2 * h2;
-    float coeff_kernel = 4.0 / (3.14159265 * h8);
+    float pi = 3.14159265;
+    float coeff_kernel = 4.0 / (pi * h8);
     
-    float density = (4.0 * particleMass) / (3.14159265 * h2);   
+    float density = (4.0 * particleMass) / (pi * h2);   
 
     for (int j = 0; j < particleCount; j++) {
         if (id == j) continue;

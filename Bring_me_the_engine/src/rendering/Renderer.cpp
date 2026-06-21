@@ -27,7 +27,7 @@ Renderer::Renderer(Shader * entityShader, Shader * lightShader, Shader * skyboxS
     initShadowMap();
 
     m_fluidSystem = std::make_unique<FluidSystem>();
-    m_fluidSystem->init(1000);
+    m_fluidSystem->init(15000);
 }
 
 Renderer::~Renderer() {
@@ -170,7 +170,7 @@ void Renderer::renderFrame(const Scene & scene) {
     m_shadowRenderTimer.stop();
 
     // Mise à jour du système de fluides
-    m_fluidSystem->update(0.00025f);
+    m_fluidSystem->update(0.001f);
 
     // Rendu principal
     m_sceneRenderTimer.start();

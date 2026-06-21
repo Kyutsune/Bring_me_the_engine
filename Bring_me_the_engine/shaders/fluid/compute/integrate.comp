@@ -2,17 +2,17 @@
 layout(local_size_x = 128) in;
 
 struct Particle {
-    vec4 position;
-    vec4 velocity;
+    vec4 position; // xyz: pos, w: densité
+    vec4 velocity; // xyz: vél, w: pression (inutilisé ici)
 };
 
 layout(std430, binding = 0) buffer InBuffer { Particle particles[]; } inBuf;
 layout(std430, binding = 1) buffer OutBuffer { Particle particles[]; } outBuf;
 
 uniform float smoothingRadius;
-uniform float stiffness;
-uniform float restDensity;
-uniform float viscosity;
+uniform float stiffness; // Équivalent au "bulk"
+uniform float restDensity; // Équivalent au "rho0" 
+uniform float viscosity; // Équivalent au "visco"
 uniform float particleMass;
 uniform float dt;
 uniform float gravity;
@@ -30,7 +30,9 @@ void main() {
 
     float h = smoothingRadius;
     float h2 = h * h;
-    float coeff_global = 1.0 / (3.14159265 * h2 * h2);
+    float pi = 3.14159265;
+    
+    float coeff_global = 1.0 / (pi * (h2 * h2));
     
     vec3 accel_interaction = vec3(0.0);
 
@@ -38,24 +40,41 @@ void main() {
         if (id == j) continue;
 
         vec3 posJ = inBuf.particles[j].position.xyz;
+        float densityJ = inBuf.particles[j].position.w;
+        vec3 velJ = inBuf.particles[j].velocity.xyz;
+
         vec3 p_ij = posI - posJ;
         float r2 = dot(p_ij, p_ij);
 
         if (r2 < h2 && r2 > 0.00001) {
             float r = sqrt(r2);
-            float force_repulsion = 10000.0 * (h - r); 
-            vec3 dir = p_ij / r;
-            accel_interaction += (dir * force_repulsion) / densityI;
+            float q = r / h;
+            
+            vec3 v_ij = velI - velJ;
+            float one_minus_q = 1.0 - q;
+            float safe_q = max(q, 0.01);
+
+            float delta_density = max((densityI + densityJ) - (2.0 * restDensity), 0.0);
+            float pressure_term = 15.0 * stiffness * delta_density * one_minus_q / safe_q;
+            float viscosity_term = 40.0 * viscosity;
+
+            vec3 parenthese = (p_ij * pressure_term) - (v_ij * viscosity_term);
+            float facteur_commun = one_minus_q * coeff_global;
+
+            vec3 f_interact_ij = (particleMass / densityJ) * facteur_commun * parenthese;
+            
+            accel_interaction += f_interact_ij / densityI;
         }
     }
 
+    // Intégration physique (Euler semi-implicite)
     vec3 acceleration = accel_interaction + vec3(0.0, gravity, 0.0);
     vec3 newVel = velI + acceleration * dt;
     vec3 newPos = posI + newVel * dt;
 
-    // Collisions avec rebond et epsilon de sécurité
-    float restitution = 0.5;
-    float eps = 0.001; 
+    // Collisions avec les frontières (restitution)
+    float restitution = 0.5; 
+    float eps = 0.001;
 
     if (newPos.x < boxMin.x) { newPos.x = boxMin.x + eps; newVel.x = -newVel.x * restitution; }
     else if (newPos.x > boxMax.x) { newPos.x = boxMax.x - eps; newVel.x = -newVel.x * restitution; }
@@ -66,6 +85,7 @@ void main() {
     if (newPos.z < boxMin.z) { newPos.z = boxMin.z + eps; newVel.z = -newVel.z * restitution; }
     else if (newPos.z > boxMax.z) { newPos.z = boxMax.z - eps; newVel.z = -newVel.z * restitution; }
 
+    // Écriture dans le OutBuffer
     outBuf.particles[id].position = vec4(newPos, densityI);
     outBuf.particles[id].velocity = vec4(newVel, 0.0);
 }

@@ -1,23 +1,23 @@
 #include "engine/FluidSystem/ParticleBuffer.h"
 #include <vector>
 
-float ParticleBuffer::init(int count, float spacing, const FluidConfig& config) {
+float ParticleBuffer::init(int count, float spacing, const FluidConfig & config) {
     m_count = count;
     std::vector<Particle> data(count);
 
     int particlesPerAxis = std::ceil(std::cbrt(count));
     float blockSize = (particlesPerAxis - 1) * spacing;
-    
+
     Vec3 boxCenter = (config.boxMin + config.boxMax) * 0.5f;
-    Vec3 spawnStart(boxCenter.x - blockSize * 0.5f, 
-                    config.boxMin.y + 1.0f, 
+    Vec3 spawnStart(boxCenter.x - blockSize * 0.5f,
+                    config.boxMin.y + 0.2f,
                     boxCenter.z - blockSize * 0.5f);
 
     int index = 0;
     for (int x = 0; x < particlesPerAxis && index < count; x++) {
         for (int y = 0; y < particlesPerAxis && index < count; y++) {
             for (int z = 0; z < particlesPerAxis && index < count; z++) {
-                data[index].position = Vec4(spawnStart.x + x * spacing, spawnStart.y + y * spacing, spawnStart.z + z * spacing, 1.0f);
+                data[index].position = Vec4(spawnStart.x + x * spacing, spawnStart.y + y * spacing, spawnStart.z + z * spacing, 0.0f);
                 data[index].velocity = Vec4(0.0f, 0.0f, 0.0f, 0.0f);
                 index++;
             }
@@ -31,18 +31,17 @@ float ParticleBuffer::init(int count, float spacing, const FluidConfig& config) 
 
     std::vector<float> rhos_init(count, 4.0f / (M_PI * h2));
 
-    // Calcul O(N^2) sur le CPU, mais c'est fait une seule fois à l'init !
     for (int i = 0; i < count; i++) {
         for (int j = i + 1; j < count; j++) {
             float dx = data[i].position.x - data[j].position.x;
             float dy = data[i].position.y - data[j].position.y;
             float dz = data[i].position.z - data[j].position.z;
-            float r2 = dx*dx + dy*dy + dz*dz;
+            float r2 = dx * dx + dy * dy + dz * dz;
 
             if (r2 < h2) {
                 float h2_min_r2 = h2 - r2;
                 float h2_min_r2_puiss3 = h2_min_r2 * h2_min_r2 * h2_min_r2;
-                float contrib = coeff_kernel * 1.0f * h2_min_r2_puiss3;
+                float contrib = coeff_kernel * h2_min_r2_puiss3;
                 rhos_init[i] += contrib;
                 rhos_init[j] += contrib;
             }
@@ -55,10 +54,8 @@ float ParticleBuffer::init(int count, float spacing, const FluidConfig& config) 
         rhos += rhos_init[i];
     }
 
-    // Calcul de la masse finale uniforme
     float calculatedMass = config.restDensity * rhos / rho2s;
-    std::cout << "[ParticleBuffer] Masse calibrée façon TP : " << calculatedMass << "\n";
-    // --------------------------------------------
+    std::cout << "[ParticleBuffer] Masse calibrée : " << calculatedMass << "\n";
 
     glGenBuffers(1, &ssboA);
     glGenBuffers(1, &ssboB);
@@ -84,7 +81,7 @@ void ParticleBuffer::swap() {
     useA = !useA;
 }
 
-void ParticleBuffer::debugReadParticle(int index) {
+void ParticleBuffer::debugReadParticle(int index, const FluidConfig & config) {
     struct Particle {
         Vec4 position;
         Vec4 velocity;
@@ -108,6 +105,8 @@ void ParticleBuffer::debugReadParticle(int index) {
                   << " | Densité: " << p.position.w
                   << " | Vitesse: " << p.velocity.x << ", " << p.velocity.y << ", " << p.velocity.z
                   << " | Pression: " << p.velocity.w << "\n";
+
+        std::cout << "Tandis que voici la masse calculée dans config: " << config.particleMass << std::endl;
 
         glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
     } else {

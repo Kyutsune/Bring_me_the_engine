@@ -21,7 +21,7 @@ public:
 
     int getCount() const { return m_count; }
 
-    void debugReadParticle(int index);
+    void debugReadParticle(int index, const FluidConfig& config);
 
     bool getUseA() const { return useA; }
 
