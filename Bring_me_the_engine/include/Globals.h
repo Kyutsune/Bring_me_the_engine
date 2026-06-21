@@ -12,6 +12,8 @@ extern size_t g_sceneIndex;
 
 extern Renderer * g_renderer;
 
+extern int g_simulationFrame;
+
 // Fonction qui va nous permettre de recharger la scène actuelle
 void reloadScene(const std::size_t & index);
 Scene & getScene();

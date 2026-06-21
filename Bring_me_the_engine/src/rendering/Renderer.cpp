@@ -248,4 +248,6 @@ void Renderer::renderFrame(const Scene & scene) {
         g_perfStats.finalFps = finalFps;
         g_perfStats.avgFinalFps = avgFinalFps;
     }
+
+    g_simulationFrame++;
 }

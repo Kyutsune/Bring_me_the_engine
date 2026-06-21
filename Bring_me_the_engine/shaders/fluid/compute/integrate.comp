@@ -34,11 +34,15 @@ uniform float particleMass;
 uniform float dt;
 uniform float particleRadius;
 uniform float gravity;
-uniform vec3 boxMin;
-uniform vec3 boxMax;
 uniform int particleCount;
 
+uniform bool useBox;
+uniform vec3 boxMin;
+uniform vec3 boxMax;
+
 uniform int obstacleCount;
+
+uniform int simulationFrame;
 
 void main() {
     uint id = gl_GlobalInvocationID.x;
@@ -96,31 +100,33 @@ void main() {
     float restitution = 0.5;
     float eps = 0.001;
 
-    if (newPos.x < boxMin.x) {
-        newPos.x = boxMin.x + eps;
-        newVel.x = -newVel.x * restitution;
-    }
-    else if (newPos.x > boxMax.x) {
-        newPos.x = boxMax.x - eps;
-        newVel.x = -newVel.x * restitution;
-    }
+    if (useBox) {
+        if (newPos.x < boxMin.x) {
+            newPos.x = boxMin.x + eps;
+            newVel.x = -newVel.x * restitution;
+        }
+        else if (newPos.x > boxMax.x) {
+            newPos.x = boxMax.x - eps;
+            newVel.x = -newVel.x * restitution;
+        }
 
-    if (newPos.y < boxMin.y) {
-        newPos.y = boxMin.y + eps;
-        newVel.y = -newVel.y * restitution;
-    }
-    else if (newPos.y > boxMax.y) {
-        newPos.y = boxMax.y - eps;
-        newVel.y = -newVel.y * restitution;
-    }
+        if (newPos.y < boxMin.y) {
+            newPos.y = boxMin.y + eps;
+            newVel.y = -newVel.y * restitution;
+        }
+        else if (newPos.y > boxMax.y) {
+            newPos.y = boxMax.y - eps;
+            newVel.y = -newVel.y * restitution;
+        }
 
-    if (newPos.z < boxMin.z) {
-        newPos.z = boxMin.z + eps;
-        newVel.z = -newVel.z * restitution;
-    }
-    else if (newPos.z > boxMax.z) {
-        newPos.z = boxMax.z - eps;
-        newVel.z = -newVel.z * restitution;
+        if (newPos.z < boxMin.z) {
+            newPos.z = boxMin.z + eps;
+            newVel.z = -newVel.z * restitution;
+        }
+        else if (newPos.z > boxMax.z) {
+            newPos.z = boxMax.z - eps;
+            newVel.z = -newVel.z * restitution;
+        }
     }
 
     // -------------------------------------------------------------

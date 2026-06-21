@@ -2,8 +2,9 @@
 
 #include "math/Vec.h"
 
-
 struct FluidConfig {
+    int numberOfParticles;
+    float baseSpacing;
     float restDensity;
     float stiffness;
     float viscosity;
@@ -12,6 +13,7 @@ struct FluidConfig {
     float particleRadius;
     float gravity;
 
+    bool useBox;
     Vec3 boxMin;
     Vec3 boxMax;
 };

@@ -15,10 +15,13 @@
 class FluidSystem {
 public:
     void init(int particleCount);
+    void reset(int particleCount);
     void update(float dt, const Scene & scene);
     void render(const Camera & cam, const Mat4 & projection);
 
     void setParams(const FluidConfig & config);
+    FluidConfig & getFluidConfig() { return m_config; }
+    FluidRenderer & getFluidRenderer() { return m_FluidRenderer; }
 
 private:
     ParticleBuffer m_buffer;

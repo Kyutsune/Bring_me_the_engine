@@ -4,6 +4,7 @@
 std::unique_ptr<Scene> g_scenePtr = nullptr;
 Scene * g_scene = nullptr;
 Renderer* g_renderer = nullptr;
+int g_simulationFrame = 0;
 
 void reloadScene(const std::size_t & index) {
     g_scenePtr = std::make_unique<Scene>(index);

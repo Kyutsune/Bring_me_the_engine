@@ -1,8 +1,8 @@
 #include "ui/Sections.h"
-#include "ui/SectionsUtilitary.h"
+#include "Globals.h"
 #include "engine/Scene.h"
 #include "system/UtilsFile.h"
-#include "Globals.h"
+#include "ui/SectionsUtilitary.h"
 
 #include "imgui.h"
 #include <unordered_map>
@@ -12,13 +12,12 @@ namespace Sections {
     void sensitivitySection() {
         if (ImGui::CollapsingHeader("Sensibilité")) {
             ImGui::SeparatorText("Sensibilité de la souris");
-            if (ImGui::SliderFloat("Sensibilité rotation##SliderRot", &g_sensibility_rot, 0.001f, 1.f, "%.3f", ImGuiSliderFlags_AlwaysClamp)){
+            if (ImGui::SliderFloat("Sensibilité rotation##SliderRot", &g_sensibility_rot, 0.001f, 1.f, "%.3f", ImGuiSliderFlags_AlwaysClamp)) {
                 UtilsFile::saveSettingsSensRot(g_settingsFilePath);
             }
             if (ImGui::InputFloat("Sensibilité rotation##InputRot", &g_sensibility_rot, 0.001f, 1.f, "%.3f")) {
                 UtilsFile::saveSettingsSensRot(g_settingsFilePath);
             }
-
 
             ImGui::SeparatorText("Sensibilité du clavier");
             if (ImGui::SliderFloat("Sensibilité déplacement##Sliderdepl", &g_sensibility_depl, 0.01f, 1.f, "%.2f", ImGuiSliderFlags_AlwaysClamp)) {
@@ -29,15 +28,14 @@ namespace Sections {
             }
             ImGui::Separator();
 
-
             if (ImGui::Button("Réinitialisation rotation")) {
                 g_sensibility_rot = 0.01f;
-				UtilsFile::saveSettingsSensRot(g_settingsFilePath);
+                UtilsFile::saveSettingsSensRot(g_settingsFilePath);
             }
             ImGui::SameLine();
             if (ImGui::Button("Réinitialisation déplacement")) {
                 g_sensibility_depl = 0.10f;
-				UtilsFile::saveSettingsSensRot(g_settingsFilePath);
+                UtilsFile::saveSettingsSensRot(g_settingsFilePath);
             }
         }
     }
@@ -81,21 +79,21 @@ namespace Sections {
         }
     }
 
-    void textureSection(Scene* scene) {
+    void textureSection(Scene * scene) {
         if (ImGui::CollapsingHeader("Textures")) {
-            for (auto& entityPtr : scene->getEntities()) {
+            for (auto & entityPtr : scene->getEntities()) {
                 // On utilise le pointeur de l'entité comme ID parent
                 ImGui::PushID(entityPtr.get());
 
                 ImGui::SeparatorText(entityPtr->getName().c_str());
 
                 int subIdx = 0;
-                for (auto& sub : entityPtr->getSubMeshes()) {
-                    ImGui::PushID(subIdx++); 
+                for (auto & sub : entityPtr->getSubMeshes()) {
+                    ImGui::PushID(subIdx++);
 
                     ImGui::Text("Partie %d", subIdx);
 
-                    Material& mat = const_cast<Material&>(sub.material);
+                    Material & mat = const_cast<Material &>(sub.material);
 
                     if (mat.m_diffuseTexture)
                         ImGui::Checkbox("Utiliser texture diffuse", &mat.m_useDiffuse);
@@ -212,7 +210,7 @@ namespace Sections {
             }
 
             if (g_forceOpenLightHeader && g_lightExpanded[name]) {
-                ImGui::SetScrollHereY(0.5f); 
+                ImGui::SetScrollHereY(0.5f);
             }
 
             if (g_lightExpanded[name]) {
@@ -293,7 +291,6 @@ namespace Sections {
                 if (name.empty())
                     continue;
 
-
                 bool isExpanded = g_entityExpanded[name];
                 if (ImGui::Selectable(name.c_str(), isExpanded)) {
                     g_entityExpanded[name] = !g_entityExpanded[name];
@@ -368,7 +365,7 @@ namespace Sections {
             if (entityToDelete) {
                 scene->removeEntity(entityToDelete);
                 g_entityExpanded.erase(entityToDelete->getName());
-				updatePerformanceStatsOnRemovedEntity(*entityToDelete);
+                updatePerformanceStatsOnRemovedEntity(*entityToDelete);
             }
         }
     }
@@ -416,7 +413,7 @@ namespace Sections {
 
             ImGui::Text("Total entités dans la scène: %.0f", g_perfStats.totalNumberEntitiesInScene);
             ImGui::Text("Total triangles dans la scène: %.0f", g_perfStats.totalNumberTrianglesInScene);
-			ImGui::Text("Total points dans la scène: %.0f", g_perfStats.totalNumberPointsInScene);
+            ImGui::Text("Total points dans la scène: %.0f", g_perfStats.totalNumberPointsInScene);
 
             ImGui::Separator();
             float percentage = 0.0f;
@@ -431,7 +428,58 @@ namespace Sections {
 
             // Une barre de progression est super utile pour voir l'efficacité du culling d'un coup d'oeil
             ImGui::ProgressBar(percentage / 100.0f, ImVec2(-1.0f, 0.0f));
-            
+        }
+    }
+
+    void fluidSystemSection() {
+        if (ImGui::CollapsingHeader("Fluid System")) {
+            ImGui::Text("Paramètres du système de fluides");
+            ImGui::Separator();
+
+            FluidSystem & fluidSystem = g_renderer->getFluidSystem();
+            FluidConfig & config = fluidSystem.getFluidConfig();
+
+            if (ImGui::SliderInt("Nombre de particules au reset", &config.numberOfParticles, 1000, 50000)) {
+            }
+
+            if (ImGui::SliderFloat("Espacement de base", &config.baseSpacing, 0.001f, 0.1f)) {
+                config.smoothingRadius = config.baseSpacing * 1.5f;
+            }
+            if (ImGui::SliderFloat("Rayon Particules", &config.particleRadius, 0.005f, 0.05f)) {
+                fluidSystem.getFluidRenderer().setParticleRadius(config.particleRadius);
+            }
+
+            if (ImGui::SliderFloat("Masse Particules", &config.particleMass, 0.001f, 2.0f)) {
+            }
+
+            if (ImGui::SliderFloat("Viscosité", &config.viscosity, 0.0f, 10.0f)) {
+            }
+
+            if (ImGui::SliderFloat("Densité", &config.restDensity, 100.0f, 2000.0f)) {
+            }
+
+            if (ImGui::SliderFloat("Gravité", &config.gravity, -20.0f, 0.0f)) {
+            }
+
+            if (ImGui::SliderFloat("Rigidité", &config.stiffness, 0.0f, 20.0f, "%.3f")) {
+            }
+
+            ImGui::Separator();
+            ImGui::Text("Paramètres de la boîte");
+            if (ImGui::Checkbox("Activer la boîte", &config.useBox)) {
+            }
+            static Vec3 boxMin = fluidSystem.getFluidConfig().boxMin;
+            static Vec3 boxMax = fluidSystem.getFluidConfig().boxMax;
+            if (ImGui::DragFloat3("Box Min", &boxMin.x, 0.1f)) {
+                fluidSystem.getFluidConfig().boxMin = boxMin;
+            }
+            if (ImGui::DragFloat3("Box Max", &boxMax.x, 0.1f)) {
+                fluidSystem.getFluidConfig().boxMax = boxMax;
+            }
+
+            if (ImGui::Button("Réinitialiser le système de fluides")) {
+                fluidSystem.reset(config.numberOfParticles);
+            }
         }
     }
 }

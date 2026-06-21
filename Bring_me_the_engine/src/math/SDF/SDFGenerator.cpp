@@ -66,6 +66,12 @@ float SDFGenerator::pointTriangleDistanceSq(const Vec3 & p, const Vec3 & a, cons
 std::vector<float> SDFGenerator::computeSDFGrid(const std::shared_ptr<Mesh> & mesh, int resX, int resY, int resZ, Vec3 & outBoxMin, Vec3 & outBoxMax) {
     AABB box = mesh->getBoundingBox();
 
+    float minThickness = 0.05f;
+    if ((box.m_max.y - box.m_min.y) < minThickness) {
+        box.m_min.y -= minThickness * 0.5f;
+        box.m_max.y += minThickness * 0.5f;
+    }
+
     Vec3 size = box.m_max - box.m_min;
 
     outBoxMin = box.m_min;
@@ -141,25 +147,27 @@ std::shared_ptr<SDFVolume> SDFGenerator::getOrGenerate(const std::shared_ptr<Mes
 
     // Tentative de chargement depuis le cache
     if (std::filesystem::exists(cachePath) && loadFromCache(cachePath, sdfData, resX, resY, resZ, boxMin, boxMax)) {
-        std::cout << "[SDF GENERATOR] Cache trouve ! Chargement instantane pour '" << entityName << "'" << std::endl;
+        std::cout << "[SDF GENERATOR] Cache trouve !..." << std::endl;
 
         auto sdfVolume = std::make_shared<SDFVolume>();
         sdfVolume->buildTexture(sdfData, resX, resY, resZ);
+
+        sdfVolume->setLocalBounds(boxMin, boxMax);
         return sdfVolume;
     }
 
     //  Pas de cache ou échec : on calcule la grille via OpenMP
-    std::cout << "[SDF GENERATOR] Aucun cache valide pour '" << entityName << "'. Lancement des calculs..." << std::endl;
+    std::cout << "[SDF GENERATOR] Aucun cache valide..." << std::endl;
     sdfData = computeSDFGrid(mesh, resX, resY, resZ, boxMin, boxMax);
 
-    // On sauvegarde le résultat pour les prochains lancements
     if (saveToCache(cachePath, sdfData, resX, resY, resZ, boxMin, boxMax)) {
-        std::cout << "[SDF GENERATOR] Grille sauvegardee avec succes dans : " << cachePath << std::endl;
+        std::cout << "[SDF GENERATOR] Grille sauvegardee..." << std::endl;
     }
 
-    // Création de l'objet de rendu GPU
     auto sdfVolume = std::make_shared<SDFVolume>();
     sdfVolume->buildTexture(sdfData, resX, resY, resZ);
+
+    sdfVolume->setLocalBounds(boxMin, boxMax);
     return sdfVolume;
 }
 

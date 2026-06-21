@@ -24,49 +24,20 @@ float ParticleBuffer::init(int count, float spacing, const FluidConfig & config)
         }
     }
 
-    float h = config.smoothingRadius;
-    float h2 = h * h;
-    float h8 = h2 * h2 * h2 * h2;
-    float coeff_kernel = 4.0f / (M_PI * h8);
-
-    std::vector<float> rhos_init(count, 4.0f / (M_PI * h2));
-
-    for (int i = 0; i < count; i++) {
-        for (int j = i + 1; j < count; j++) {
-            float dx = data[i].position.x - data[j].position.x;
-            float dy = data[i].position.y - data[j].position.y;
-            float dz = data[i].position.z - data[j].position.z;
-            float r2 = dx * dx + dy * dy + dz * dz;
-
-            if (r2 < h2) {
-                float h2_min_r2 = h2 - r2;
-                float h2_min_r2_puiss3 = h2_min_r2 * h2_min_r2 * h2_min_r2;
-                float contrib = coeff_kernel * h2_min_r2_puiss3;
-                rhos_init[i] += contrib;
-                rhos_init[j] += contrib;
-            }
-        }
+    // Plus de calcul de calibration magique, on renvoie directement la masse de la config
+    if (ssboA == 0) {
+        glGenBuffers(1, &ssboA);
+        glGenBuffers(1, &ssboB);
     }
 
-    float rho2s = 0.0f, rhos = 0.0f;
-    for (int i = 0; i < count; i++) {
-        rho2s += rhos_init[i] * rhos_init[i];
-        rhos += rhos_init[i];
-    }
-
-    float calculatedMass = config.restDensity * rhos / rho2s;
-    std::cout << "[ParticleBuffer] Masse calibrée : " << calculatedMass << "\n";
-
-    glGenBuffers(1, &ssboA);
-    glGenBuffers(1, &ssboB);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboA);
     glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(Particle) * count, data.data(), GL_DYNAMIC_COPY);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssboB);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(Particle) * count, nullptr, GL_DYNAMIC_COPY);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(Particle) * count, data.data(), GL_DYNAMIC_COPY);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
     useA = true;
 
-    return calculatedMass;
+    return config.particleMass;
 }
 
 void ParticleBuffer::bindRead() {

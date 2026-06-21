@@ -91,6 +91,15 @@ void Menu::render() {
     ImGui::Begin("Performances", &m_menu_principal);
     Sections::performanceSection();
     ImGui::End();
+
+
+    ImGui::SetNextWindowPos(nextPos, ImGuiCond_FirstUseEver);
+    setupMenuDisplay();
+    ImGui::Begin("Fluid System", &m_menu_principal);
+    Sections::fluidSystemSection();
+    ImGui::End();
+
+
 }
 
 void Menu::endFrame() {

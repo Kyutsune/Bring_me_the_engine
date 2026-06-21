@@ -122,6 +122,8 @@ public:
 			<< (m_renderType == RenderType::FORWARD ? "FORWARD" : "DEFERRED") << std::endl;
     }
 
+    FluidSystem& getFluidSystem() { return *m_fluidSystem; }
+
 
 
 	// Partie de debug GBuffer

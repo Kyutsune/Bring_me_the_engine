@@ -3,6 +3,8 @@
 
 #include "engine/FluidSystem/FluidSystem.h"
 
+#include "Globals.h"
+
 void FluidComputePipeline::init(ParticleBuffer & buffer) {
     m_buffer = &buffer;
     m_densityShader = std::make_unique<Shader>(PathResolver::getResourcePath("shaders/fluid/compute/density.comp"));
@@ -44,8 +46,11 @@ void FluidComputePipeline::integrate(float dt, const FluidConfig & config, const
     m_integrateShader->set("gravity", config.gravity);
     m_integrateShader->set("particleCount", count);
 
+    m_integrateShader->set("useBox", config.useBox);
     m_integrateShader->set("boxMin", config.boxMin);
     m_integrateShader->set("boxMax", config.boxMax);
+
+    m_integrateShader->set("simulationFrame", g_simulationFrame);
 
     // Paramètres du ssbo d'obstacles
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, obstacleBuffer.ssbo);

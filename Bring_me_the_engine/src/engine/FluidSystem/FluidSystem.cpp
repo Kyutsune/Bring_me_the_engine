@@ -2,24 +2,24 @@
 
 void FluidSystem::init(int particleCount) {
     m_config = {
-        .restDensity = 1000.0f,   // rho0
-        .stiffness = 20.0f,       // On baisse la rigidité pour éviter les explosions au début
-        .viscosity = 0.6f,        // Forte viscosité pour forcer l'amortissement
-        .smoothingRadius = 0.05f, // h
-        .particleMass = 1.0f,     // Valeur temporaire, sera écrasée par le init
-        .particleRadius = 0.0f,   // Rayon des particules
+        .numberOfParticles = particleCount, // Nombre de particules dans le système
+        .baseSpacing = 0.035f,              // Espacement initial entre les particules
+        .restDensity = 1000.0f,             // rho0
+        .stiffness = 20.0f,                 // On baisse la rigidité pour éviter les explosions au début
+        .viscosity = 10.0f,                 // Forte viscosité pour forcer l'amortissement
+        .smoothingRadius = 0.05f,           // h
+        .particleMass = 1.0f,               // Valeur temporaire, sera écrasée par le init
+        .particleRadius = 0.016f,           // Rayon des particules
         .gravity = -9.81f,
 
-        .boxMin = Vec3(-2.0f, -0.98f, 6.0f),
+        .useBox = true,
+        .boxMin = Vec3(-2.0f, 0.0f, 6.0f),
         .boxMax = Vec3(0.0f, 2.0f, 8.0f)};
 
-    float spawnSpacing = 0.035f;
-    m_config.particleMass = m_buffer.init(particleCount, spawnSpacing, m_config);
-    m_config.particleRadius = spawnSpacing * 0.47f;
+    m_config.particleMass = m_buffer.init(particleCount, m_config.baseSpacing, m_config);
 
     m_compute.init(m_buffer);
     m_FluidRenderer.init();
-
     m_FluidRenderer.setParticleRadius(m_config.particleRadius);
 
     glGenBuffers(1, &m_obstacleBuffer.ssbo);
@@ -28,37 +28,43 @@ void FluidSystem::init(int particleCount) {
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
+void FluidSystem::reset(int particleCount) {
+    m_config.smoothingRadius = m_config.baseSpacing * 1.5f;
+
+    // Relance l'init du buffer avec des proportions saines
+    m_config.particleMass = m_buffer.init(particleCount, m_config.baseSpacing, m_config);
+
+    m_FluidRenderer.setParticleRadius(m_config.particleRadius);
+
+    std::cout << "[Reset] Nouveau h : " << m_config.smoothingRadius
+              << " | Masse calibrée : " << m_config.particleMass << "\n";
+}
+
 void FluidSystem::update(float dt, const Scene & scene) {
     m_obstacleBuffer.obstacles.clear();
     int currentTextureSlot = 0;
 
-    // Récupération dynamique des entités physiques de la scène
     for (const auto & entity : scene.getEntities()) {
         if (entity->hasSDF()) {
             ObstacleData obs;
-            
-            // Calcul indispensable : on donne au GPU de quoi annuler les transformations de l'objet
             obs.inverseModelMatrix = entity->getTransform().inverse();
-            
-            // On récupère la bounding box locale non transformée (celle utilisée par l'SDFGenerator)
-            // Attention : l'SDFGenerator applique une marge de 10% (padding), 
-            // il faut donc récupérer les mêmes bornes que ton SDFGenerator !
-            AABB localBox = entity->getBoundingBox();
-            obs.boxMin = localBox.m_min;
-            obs.boxMax = localBox.m_max;
-            
+
+            // CORRECTION : On lit les bornes du volume 3D, pas celles du mesh plat !
+            auto sdfVolume = entity->getSDFVolume();
+            obs.boxMin = sdfVolume->getLocalMin();
+            obs.boxMax = sdfVolume->getLocalMax();
+
             obs.textureSlot = currentTextureSlot;
             obs.padding = 0.0f;
 
             m_obstacleBuffer.obstacles.push_back(obs);
 
-            // Liaison de la texture 3D sur l'unité de texture correspondante
-            // On réserve les premières unités de textures aux ombres/GBuffer, et on binde les SDF à partir de GL_TEXTURE4
             glActiveTexture(GL_TEXTURE4 + currentTextureSlot);
-            glBindTexture(GL_TEXTURE_3D, entity->getSDFVolume()->getTextureID());
+            glBindTexture(GL_TEXTURE_3D, sdfVolume->getTextureID());
 
             currentTextureSlot++;
-            if (currentTextureSlot >= 8) break; // Sécurité pour ne pas dépasser la taille du tableau dans le shader
+            if (currentTextureSlot >= 8)
+                break;
         }
     }
 

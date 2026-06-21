@@ -88,4 +88,11 @@ namespace Sections {
      */
     void performanceSection();
 
+    /**
+     * @brief Section pour la gestion du système de fluides.
+     *
+     * Permet de visualiser et ajuster les paramètres du système de fluides.
+     */
+    void fluidSystemSection();
+
 }
